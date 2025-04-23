@@ -1,3 +1,14 @@
 spring:
     application:
         name: fashion-captioner
+    thymeleaf:
+        cache: false # Tắt cache Thymeleaf để reload template khi chỉnh sửa
+        prefix: classpath:/templates/ # Đường dẫn đến thư mục templates
+        suffix: .html # Đuôi file template
+    web:
+        resources:
+            static-locations: classpath:/static/ # Đường dẫn đến thư mục static
+    mvc:
+        static-path-pattern: /** # Đảm bảo tất cả đường dẫn tĩnh được phục vụ
+server:
+    port: 8080 # Cổng chạy ứng dụng (mặc định, có thể đổi nếu cần)
