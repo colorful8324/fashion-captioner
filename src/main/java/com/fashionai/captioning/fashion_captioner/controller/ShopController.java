@@ -30,56 +30,19 @@ public class ShopController {
     private final CaptionRepository captionRepository;
     private final RestTemplate restTemplate;
     private final MinioService minioService;
+
     @Value("${ai.caption.url}")
     private String dlServerUrl;
+
     @Value("${ai.advise.url}")
     private String llmServerUrl;
-    @Value("") // TODO: them vao sau
+
+    @Value("") // TODO: Thêm vào sau
     private String aiQueryUrl;
 
     @GetMapping({"/", "index"})
     public String home() {
         return "shop/index";
-    }
-
-    @GetMapping("/shop")
-    public String shop() {
-        return "shop/shop";
-    }
-
-    @GetMapping("/about")
-    public String about() {
-        return "shop/about";
-    }
-
-    @GetMapping("/blog")
-    public String blog() {
-        return "shop/blog";
-    }
-
-    @GetMapping("/caption")
-    public String caption() {
-        return "shop/caption";
-    }
-
-    @GetMapping("/cart")
-    public String cart() {
-        return "shop/cart";
-    }
-
-    @GetMapping("/checkout")
-    public String checkout() {
-        return "shop/checkout";
-    }
-
-    @GetMapping("/contact")
-    public String contact() {
-        return "shop/contact";
-    }
-
-    @GetMapping("/services")
-    public String services() {
-        return "shop/services";
     }
 
     @PostMapping("/images/gen-cap")
@@ -90,15 +53,39 @@ public class ShopController {
 
         try {
             Map<String, String> uploadedFileMap = handleUploads(images);
-            log.info("store minio thanh cong");
-            List<Map<String, Object>> aiResults = callAiServer(images);
-            log.info("ai server xu li thanh cong");
+            log.info("Upload MinIO thành công");
+            List<Map<String, Object>> aiResults = callDlServer(images);
+            log.info("AI server xử lý thành công");
             byte[] csvBytes = saveCaptionsAndBuildCSV(aiResults, uploadedFileMap);
-            log.info("build thanh cong csv");
+            log.info("Tạo CSV thành công");
             return buildDownloadResponse(csvBytes);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(List.of("Lỗi khi xử lý ảnh: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/images/advise")
+    public ResponseEntity<?> getImageAdvice(
+            @RequestParam("images") List<MultipartFile> images,
+            @RequestParam("question") String question) {
+
+        if (images.isEmpty() || question.isEmpty()) {
+            return ResponseEntity.badRequest().body("Vui lòng upload câu hỏi và ít nhất một ảnh.");
+        }
+
+        try {
+            Map<String, String> uploadedMap = handleUploads(images);  
+            List<Map<String, Object>> captionResults = callDlServer(images);  
+            List<String> captions = extractCaptions(captionResults);  
+
+            Map<String, Object> advicePayload = buildAdvicePayload(captions, question);
+            ResponseEntity<Map> aiResponse = requestAiAdvice(advicePayload);
+
+            return ResponseEntity.ok(aiResponse.getBody());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi xử lý tư vấn: " + e.getMessage());
         }
     }
 
@@ -112,7 +99,7 @@ public class ShopController {
         return uploadedMap;
     }
 
-    private List<Map<String, Object>> callAiServer(List<MultipartFile> images) throws IOException {
+    private List<Map<String, Object>> callDlServer(List<MultipartFile> images) throws IOException {
         MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
         for (MultipartFile file : images) {
             ByteArrayResource fileRes = new ByteArrayResource(file.getBytes()) {
@@ -128,6 +115,31 @@ public class ShopController {
         HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(formData);
         ResponseEntity<Map> response = restTemplate.exchange(dlServerUrl, HttpMethod.POST, request, Map.class);
         return (List<Map<String, Object>>) response.getBody().get("results");
+    }
+
+    private List<String> extractCaptions(List<Map<String, Object>> captionResults) {
+        return captionResults.stream()
+                .map(result -> {
+                    if (result.containsKey("caption")) {
+                        return ((List<String>) result.get("caption")).get(0);
+                    }
+                    return "";
+                })
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, Object> buildAdvicePayload(List<String> captions, String question) {
+        Map<String, Object> advicePayload = new HashMap<>();
+        advicePayload.put("captions", captions);
+        advicePayload.put("question", question);
+        return advicePayload;
+    }
+
+    private ResponseEntity<Map> requestAiAdvice(Map<String, Object> advicePayload) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(advicePayload, headers);
+        return restTemplate.postForEntity(llmServerUrl, request, Map.class);
     }
 
     private byte[] saveCaptionsAndBuildCSV(List<Map<String, Object>> results, Map<String, String> fileMap) throws Exception {
@@ -149,6 +161,7 @@ public class ShopController {
 
         return csv.toString().getBytes(StandardCharsets.UTF_8);
     }
+
     private ResponseEntity<byte[]> buildDownloadResponse(byte[] csvBytes) {
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=captions.csv");
@@ -163,54 +176,6 @@ public class ShopController {
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "form-data; name=\"files\"; filename=\"" + filename + "\"");
         return headers;
     }
-
-    @PostMapping("/images/advise")
-    public ResponseEntity<?> getImageAdvice(
-            @RequestParam("images") List<MultipartFile> images,
-            @RequestParam("question") String question) {
-
-        if (images.isEmpty() || question.isEmpty()) {
-            return ResponseEntity.badRequest().body("Vui lòng upload câu hỏi và ít nhất một ảnh.");
-        }
-
-        try {
-            // 1. Lưu ảnh lên MinIO
-            Map<String, String> uploadedMap = handleUploads(images);
-            log.info("Upload MinIO thành công");
-            List<Map<String, Object>> captionResults = callAiServer(images);
-            log.info("Sinh caption thành công");
-            List<String> captions = captionResults.stream()
-                    .map(result -> {
-                        if (result.containsKey("caption")) {
-                            return ((List<String>) result.get("caption")).get(0);
-                        }
-                        return "";
-                    })
-                    .collect(Collectors.toList());
-
-            // Gửi captions và question đến AI server để lấy advise
-            Map<String, Object> advicePayload = new HashMap<>();
-            advicePayload.put("captions", captions);
-            advicePayload.put("question", question);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(advicePayload, headers);
-
-            ResponseEntity<Map> aiResponse = restTemplate.postForEntity(
-                    llmServerUrl,
-                    request,
-                    Map.class
-            );
-
-            return ResponseEntity.ok(aiResponse.getBody());
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi xử lý tư vấn: " + e.getMessage());
-        }
-    }
-
 
 //    @PostMapping("/query/advise")
 //    public ResponseEntity<Map<String, Object>> getAdviceFromQuery(@RequestBody Map<String, String> request) {
