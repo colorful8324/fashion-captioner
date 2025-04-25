@@ -3,6 +3,7 @@ package com.fashionai.captioning.fashion_captioner.controller;
 import com.fashionai.captioning.fashion_captioner.model.Caption;
 import com.fashionai.captioning.fashion_captioner.repository.CaptionRepository;
 import com.fashionai.captioning.fashion_captioner.service.MinioService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.core.io.ByteArrayResource;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -24,22 +26,18 @@ import java.util.UUID;
 
 @Controller
 @Slf4j
+@RequiredArgsConstructor
 public class ShopController {
 
     private final CaptionRepository captionRepository;
     private final RestTemplate restTemplate;
     private final MinioService minioService;
     @Value("${ai.caption.url}")
-    private String aiCaptionUrl;
+    private String dlServerUrl;
     @Value("") // TODO: them vao sau
     private String aiAdviceUrl;
     @Value("") // TODO: them vao sau
     private String aiQueryUrl;
-    public ShopController(CaptionRepository captionRepository, RestTemplate restTemplate, MinioService minioService) {
-        this.captionRepository = captionRepository;
-        this.restTemplate = restTemplate;
-        this.minioService = minioService;
-    }
 
     @GetMapping({"/", "index"})
     public String home() {
@@ -130,7 +128,7 @@ public class ShopController {
         }
 
         HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(formData);
-        ResponseEntity<Map> response = restTemplate.exchange(aiCaptionUrl, HttpMethod.POST, request, Map.class);
+        ResponseEntity<Map> response = restTemplate.exchange(dlServerUrl, HttpMethod.POST, request, Map.class);
         return (List<Map<String, Object>>) response.getBody().get("results");
     }
 
@@ -187,11 +185,5 @@ public class ShopController {
 //        return ResponseEntity.ok(response.getBody());
 //    }
 
-//    @GetMapping("/image-url")
-//    public void proxyImage(@RequestParam("url") String url, HttpServletResponse response) throws IOException {
-//        InputStream imageStream = new URL(url).openStream();
-//        response.setContentType("image/jpeg"); // hoặc tự detect từ URL
-//        StreamUtils.copy(imageStream, response.getOutputStream());
-//    }
 
 }
