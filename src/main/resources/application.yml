@@ -22,4 +22,4 @@ server:
     port: 8080 # Cổng chạy ứng dụng (mặc định, có thể đổi nếu cần)
 ai:
     caption:
-        url: http://localhost:5000/generate-caption
+        url: http://127.0.0.1:8000/gen-cap

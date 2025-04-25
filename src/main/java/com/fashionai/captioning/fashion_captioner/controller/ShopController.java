@@ -4,9 +4,6 @@ import com.fashionai.captioning.fashion_captioner.model.Caption;
 import com.fashionai.captioning.fashion_captioner.repository.CaptionRepository;
 import com.fashionai.captioning.fashion_captioner.utils.MultipartInputStreamFileResource;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
@@ -20,11 +17,11 @@ import org.springframework.util.LinkedMultiValueMap;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-@RestController
+@Controller
 public class ShopController {
 
     private final CaptionRepository captionRepository;
@@ -86,60 +83,75 @@ public class ShopController {
         return "shop/services";
     }
 
-    private HttpEntity<MultiValueMap<String, Object>> buildMultipartRequest(MultipartFile file) throws Exception {
+    private HttpEntity<MultiValueMap<String, Object>> buildMultipartRequest(List<MultipartFile> files) throws Exception {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("image", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+
+        for (MultipartFile file : files) {
+            body.add("files", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         return new HttpEntity<>(body, headers);
     }
+
     @PostMapping("/images/gen-cap")
-    public ResponseEntity<List<String>> generateCaptions(@RequestParam("images") List<MultipartFile> images) {
-        if (images.size() > 5) {
-            return ResponseEntity.badRequest().body(List.of("Chỉ được phép upload tối đa 5 ảnh."));
+    public ResponseEntity<?> generateCaptions(@RequestParam("images") List<MultipartFile> images) {
+        if (images.size() > 100) {
+            return ResponseEntity.badRequest().body(List.of("Chỉ được phép upload tối đa 100 ảnh."));
         }
 
-        List<String> captions = new ArrayList<>();
+        try {
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = buildMultipartRequest(images);
 
-        for (MultipartFile image : images) {
-            try {
-                // Gọi API Python server
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            ResponseEntity<Map> response = restTemplate.exchange(
+                aiCaptionUrl, HttpMethod.POST, requestEntity, Map.class);
 
-                HttpEntity<MultiValueMap<String, Object>> requestEntity = buildMultipartRequest(image);
-                ResponseEntity<Map> response = restTemplate.exchange(
-                        aiCaptionUrl, HttpMethod.POST, requestEntity, Map.class);
+            List<Map<String, Object>> results = (List<Map<String, Object>>) response.getBody().get("results");
 
-                String caption = (String) response.getBody().get("caption");
+            StringBuilder csvBuilder = new StringBuilder();
+            csvBuilder.append("Filename,Caption\n");
 
-                // Lưu vào DB
-                Caption captionRecord = new Caption(
-                        image.getOriginalFilename(),
-                        "test.com",  // TODO: lam 1 cai db rieng de luu anh
-                        caption
-                );
-                captionRepository.save(captionRecord);
+            for (Map<String, Object> result : results) {
+                String filename = (String) result.get("filename");
+                if (result.containsKey("caption")) {
+                    List<String> captionList = (List<String>) result.get("caption");
+                    String caption = captionList.get(0).replaceAll("\"", "\"\""); // Escape dấu nháy kép
 
-                captions.add(caption);
+                    // Lưu vào DB
+                    captionRepository.save(new Caption(filename, "test.com", caption));
 
-            } catch (Exception e) {
-                captions.add("Error generating caption for image: " + image.getOriginalFilename());
+                    csvBuilder.append("\"").append(filename).append("\",\"").append(caption).append("\"\n");
+                } else {
+                    csvBuilder.append("\"").append(filename).append("\",\"Lỗi khi sinh caption\"\n");
+                }
             }
+
+            byte[] csvBytes = csvBuilder.toString().getBytes(StandardCharsets.UTF_8);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=captions.csv");
+            headers.setContentType(MediaType.parseMediaType("text/csv"));
+            headers.setContentLength(csvBytes.length);
+
+            return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(List.of("Lỗi khi gọi AI server: " + e.getMessage()));
         }
-
-        return ResponseEntity.ok(captions);
     }
 
-    @PostMapping("/images/advise")
-    public ResponseEntity<String> getAdviceFromImage(@RequestParam("image") MultipartFile image) throws Exception {
-        HttpEntity<MultiValueMap<String, Object>> request = buildMultipartRequest(image);
-        ResponseEntity<Map> response = restTemplate.exchange(aiAdviceUrl, HttpMethod.POST, request, Map.class);
-        String advice = (String) response.getBody().get("advice");
-    return ResponseEntity.ok(advice);
-    }
+
+//
+//    @PostMapping("/images/advise")
+//    public ResponseEntity<String> getAdviceFromImage(@RequestParam("image") MultipartFile image) throws Exception {
+//        HttpEntity<MultiValueMap<String, Object>> request = buildMultipartRequest(image);
+//        ResponseEntity<Map> response = restTemplate.exchange(aiAdviceUrl, HttpMethod.POST, request, Map.class);
+//        String advice = (String) response.getBody().get("advice");
+//        return ResponseEntity.ok(advice);
+//    }
 
     @PostMapping("/query/advise")
     public ResponseEntity<Map<String, Object>> getAdviceFromQuery(@RequestBody Map<String, String> request) {
