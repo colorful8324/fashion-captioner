@@ -3,6 +3,7 @@ package com.fashionai.captioning.fashion_captioner.controller;
 import com.fashionai.captioning.fashion_captioner.model.Caption;
 import com.fashionai.captioning.fashion_captioner.repository.CaptionRepository;
 import com.fashionai.captioning.fashion_captioner.service.MinioService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -17,12 +18,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.core.io.ByteArrayResource;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @Slf4j
@@ -34,8 +32,8 @@ public class ShopController {
     private final MinioService minioService;
     @Value("${ai.caption.url}")
     private String dlServerUrl;
-    @Value("") // TODO: them vao sau
-    private String aiAdviceUrl;
+    @Value("${ai.advise.url}")
+    private String llmServerUrl;
     @Value("") // TODO: them vao sau
     private String aiQueryUrl;
 
@@ -166,17 +164,53 @@ public class ShopController {
         return headers;
     }
 
+    @PostMapping("/images/advise")
+    public ResponseEntity<?> getImageAdvice(
+            @RequestParam("images") List<MultipartFile> images,
+            @RequestParam("question") String question) {
 
+        if (images.isEmpty() || question.isEmpty()) {
+            return ResponseEntity.badRequest().body("Vui lòng upload câu hỏi và ít nhất một ảnh.");
+        }
 
+        try {
+            // 1. Lưu ảnh lên MinIO
+            Map<String, String> uploadedMap = handleUploads(images);
+            log.info("Upload MinIO thành công");
+            List<Map<String, Object>> captionResults = callAiServer(images);
+            log.info("Sinh caption thành công");
+            List<String> captions = captionResults.stream()
+                    .map(result -> {
+                        if (result.containsKey("caption")) {
+                            return ((List<String>) result.get("caption")).get(0);
+                        }
+                        return "";
+                    })
+                    .collect(Collectors.toList());
 
-//
-//    @PostMapping("/images/advise")
-//    public ResponseEntity<String> getAdviceFromImage(@RequestParam("image") MultipartFile image) throws Exception {
-//        HttpEntity<MultiValueMap<String, Object>> request = buildMultipartRequest(image);
-//        ResponseEntity<Map> response = restTemplate.exchange(aiAdviceUrl, HttpMethod.POST, request, Map.class);
-//        String advice = (String) response.getBody().get("advice");
-//        return ResponseEntity.ok(advice);
-//    }
+            // Gửi captions và question đến AI server để lấy advise
+            Map<String, Object> advicePayload = new HashMap<>();
+            advicePayload.put("captions", captions);
+            advicePayload.put("question", question);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(advicePayload, headers);
+
+            ResponseEntity<Map> aiResponse = restTemplate.postForEntity(
+                    llmServerUrl,
+                    request,
+                    Map.class
+            );
+
+            return ResponseEntity.ok(aiResponse.getBody());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi xử lý tư vấn: " + e.getMessage());
+        }
+    }
+
 
 //    @PostMapping("/query/advise")
 //    public ResponseEntity<Map<String, Object>> getAdviceFromQuery(@RequestBody Map<String, String> request) {
