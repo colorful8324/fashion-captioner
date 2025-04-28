@@ -7,17 +7,15 @@
 	<link rel="shortcut icon" th:href="@{/shop/favicon.png}">
 
 	<meta name="description" content="" />
-	<meta name="keywords" content="bootstrap, bootstrap5" />
+	<meta name="keywords" content="bootstrap, bootstrap4" />
 
 	<!-- Bootstrap CSS -->
 	<link th:href="@{/shop/css/bootstrap.min.css}" rel="stylesheet">
 	<link th:href="@{https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css}" rel="stylesheet">
 	<link th:href="@{/shop/css/tiny-slider.css}" rel="stylesheet">
 	<link th:href="@{/shop/css/style.css}" rel="stylesheet">
-
-	<title>Shop - Furni</title>
+	<title>Recommendation - Furni</title>
 </head>
-
 <body>
 
 <!-- Start Header/Navigation -->
@@ -25,24 +23,23 @@
 	<div class="container">
 		<a class="navbar-brand" th:href="@{/index}">Furni<span>.</span></a>
 
-		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsFurni"
-				aria-controls="navbarsFurni" aria-expanded="false" aria-label="Toggle navigation">
+		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsFurni" aria-controls="navbarsFurni" aria-expanded="false" aria-label="Toggle navigation">
 			<span class="navbar-toggler-icon"></span>
 		</button>
 
 		<div class="collapse navbar-collapse" id="navbarsFurni">
 			<ul class="custom-navbar-nav navbar-nav ms-auto mb-2 mb-md-0">
 				<li><a class="nav-link" th:href="@{/index}">Home</a></li>
-				<li class="nav-item active"><a class="nav-link" th:href="@{/shop}">Shop</a></li>
+				<li><a class="nav-link" th:href="@{/shop}">Shop</a></li>
 				<li><a class="nav-link" th:href="@{/about}">About us</a></li>
 				<li><a class="nav-link" th:href="@{/services}">Services</a></li>
-				<li><a class="nav-link" th:href="@{/caption}">Recommendation</a></li>
+				<li class="nav-item active"><a class="nav-link" th:href="@{/caption}">Recommendation</a></li>
 				<li><a class="nav-link" th:href="@{/contact}">Contact us</a></li>
 			</ul>
 
 			<ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
-				<li><a class="nav-link" href="#"><img th:src="@{/shop/images/user.svg}" alt="User Icon"></a></li>
-				<li><a class="nav-link" th:href="@{/cart}"><img th:src="@{/shop/images/cart.svg}" alt="Cart Icon"></a></li>
+				<li><a class="nav-link" href="#"><img th:src="@{/shop/images/user.svg}" alt="User"></a></li>
+				<li><a class="nav-link" th:href="@{/cart}"><img th:src="@{/shop/images/cart.svg}" alt="Cart"></a></li>
 			</ul>
 		</div>
 	</div>
@@ -55,7 +52,7 @@
 		<div class="row justify-content-between">
 			<div class="col-lg-5">
 				<div class="intro-excerpt">
-					<h1>Shop</h1>
+					<h1>Recommendation</h1>
 				</div>
 			</div>
 			<div class="col-lg-7"></div>
@@ -64,28 +61,36 @@
 </div>
 <!-- End Hero Section -->
 
-<!-- Start Product Section -->
-<div class="untree_co-section product-section before-footer-section">
+<!-- Start Fashion Upload Section -->
+<div class="fashion-upload-section py-5">
 	<div class="container">
-		<div class="row">
+		<p class="fst-italic mb-4 text-muted text-center fs-5">
+			Let us help you perfect your appearance &lt;3
+		</p>
 
-			<!-- Thymeleaf Loop Example: Replace with dynamic product list later -->
-			<div class="col-12 col-md-4 col-lg-3 mb-5" th:each="i : ${#numbers.sequence(1,8)}">
-				<a class="product-item" href="#">
-					<img th:src="@{/shop/images/product-__${i % 3 + 1}__.png}" class="img-fluid product-thumbnail" alt="Product Image">
-					<h3 class="product-title" th:text="${i % 3 == 1 ? 'Nordic Chair' : (i % 3 == 2 ? 'Kruzo Aero Chair' : 'Ergonomic Chair')}"></h3>
-					<strong class="product-price" th:text="${i % 3 == 2 ? '$78.00' : (i % 3 == 0 ? '$43.00' : '$50.00')}"></strong>
-
-					<span class="icon-cross">
-            <img th:src="@{/shop/images/cross.svg}" class="img-fluid" alt="Icon">
-          </span>
-				</a>
-			</div>
-
+		<!-- Upload Icon -->
+		<div class="mb-4 d-flex justify-content-center">
+			<label for="fashionUpload" class="rounded-circle shadow d-flex align-items-center justify-content-center"
+				   style="background-color: #f1ede9; width: 120px; height: 120px; cursor: pointer;">
+				<i class="fas fa-upload" style="font-size: 2.5rem; color: #6b4f34;"></i>
+			</label>
 		</div>
+
+		<!-- Description -->
+		<p class="text-secondary text-center mb-4 fs-5 fw-medium">
+			Upload a fashion image you want to explore
+		</p>
+
+		<!-- Upload Form -->
+		<form th:action="@{/recommendation/caption}" method="post" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
+			<input type="file" name="fashionImage" id="fashionUpload" accept="image/*" class="form-control d-none"
+				   onchange="document.getElementById('uploadBtn').classList.remove('d-none');">
+			<button type="submit" class="btn btn-success mt-3 px-4 d-none" id="uploadBtn">Upload</button>
+		</form>
+
 	</div>
 </div>
-<!-- End Product Section -->
+<!-- End Fashion Upload Section -->
 
 <!-- Start Footer Section -->
 <footer class="footer-section">
@@ -95,24 +100,22 @@
 				<div class="mb-4 footer-logo-wrap"><a href="#" class="footer-logo">Furni<span>.</span></a></div>
 				<p class="mb-4">Donec facilisis quam ut purus rutrum lobortis. Donec vitae odio quis nisl dapibus malesuada...</p>
 				<ul class="list-unstyled custom-social">
-					<li><a href="#"><span class="fa fa-brands fa-facebook-f"></span></a></li>
-					<li><a href="#"><span class="fa fa-brands fa-twitter"></span></a></li>
-					<li><a href="#"><span class="fa fa-brands fa-instagram"></span></a></li>
-					<li><a href="#"><span class="fa fa-brands fa-linkedin"></span></a></li>
+					<li><a href="#"><span class="fab fa-facebook-f"></span></a></li>
+					<li><a href="#"><span class="fab fa-twitter"></span></a></li>
+					<li><a href="#"><span class="fab fa-instagram"></span></a></li>
+					<li><a href="#"><span class="fab fa-linkedin"></span></a></li>
 				</ul>
 			</div>
-
 			<div class="col-lg-8">
 				<div class="row links-wrap">
 					<div class="col-6 col-md-3">
 						<ul class="list-unstyled">
 							<li><a th:href="@{/about}">About us</a></li>
 							<li><a th:href="@{/services}">Services</a></li>
-							<li><a href="#">Blog</a></li>
+							<li><a th:href="@{/caption}">Blog</a></li>
 							<li><a th:href="@{/contact}">Contact us</a></li>
 						</ul>
 					</div>
-
 					<div class="col-6 col-md-3">
 						<ul class="list-unstyled">
 							<li><a href="#">Support</a></li>
@@ -120,7 +123,6 @@
 							<li><a href="#">Live chat</a></li>
 						</ul>
 					</div>
-
 					<div class="col-6 col-md-3">
 						<ul class="list-unstyled">
 							<li><a href="#">Jobs</a></li>
@@ -129,7 +131,6 @@
 							<li><a href="#">Privacy Policy</a></li>
 						</ul>
 					</div>
-
 					<div class="col-6 col-md-3">
 						<ul class="list-unstyled">
 							<li><a href="#">Nordic Chair</a></li>
@@ -147,6 +148,5 @@
 <script th:src="@{/shop/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/shop/js/tiny-slider.js}"></script>
 <script th:src="@{/shop/js/custom.js}"></script>
-
 </body>
 </html>
