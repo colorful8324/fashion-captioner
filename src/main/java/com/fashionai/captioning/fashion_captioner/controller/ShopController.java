@@ -3,7 +3,6 @@ package com.fashionai.captioning.fashion_captioner.controller;
 import com.fashionai.captioning.fashion_captioner.model.Caption;
 import com.fashionai.captioning.fashion_captioner.repository.CaptionRepository;
 import com.fashionai.captioning.fashion_captioner.service.MinioService;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +42,46 @@ public class ShopController {
     @GetMapping({"/", "index"})
     public String home() {
         return "shop/index";
+    }
+
+    @GetMapping("/shop")
+    public String shop() {
+        return "shop/shop";
+    }
+
+    @GetMapping("/about")
+    public String about() {
+        return "shop/about";
+    }
+
+    @GetMapping("/recommendation")
+    public String blog() {
+        return "shop/recommendation";
+    }
+
+    @PostMapping("/recommendation/caption")
+    public String caption() {
+        return "shop/caption";
+    }
+
+    @GetMapping("/checkout")
+    public String checkout() {
+        return "shop/checkout";
+    }
+
+    @GetMapping("/cart")
+    public String cart() {
+        return "shop/cart";
+    }
+
+    @GetMapping("/contact")
+    public String contact() {
+        return "shop/contact";
+    }
+
+    @GetMapping("/services")
+    public String services() {
+        return "shop/services";
     }
 
     @PostMapping("/images/gen-cap")
@@ -109,12 +148,7 @@ public class ShopController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi xử lý request: " + e.getMessage());
         }
-    @GetMapping("/shop")
-    public String shop() {
-        return "shop/shop";
     }
-
-    // ======================= SUPPORTING FUNCTIONS ==========================
 
     private Map<String, String> uploadImagesToMinio(List<MultipartFile> images) throws Exception {
         Map<String, String> uploadedFiles = new HashMap<>();
@@ -124,9 +158,6 @@ public class ShopController {
             uploadedFiles.put(image.getOriginalFilename(), storedName);
         }
         return uploadedFiles;
-    @GetMapping("/about")
-    public String about() {
-        return "shop/about";
     }
 
     private List<Map<String, Object>> generateCaptionsFromServer(List<MultipartFile> images) throws IOException {
@@ -141,17 +172,10 @@ public class ShopController {
             };
             formData.add("images", new HttpEntity<>(fileResource, createMultipartHeaders(file.getOriginalFilename())));
         }
-    @GetMapping("/recommendation")
-    public String blog() {
-        return "shop/recommendation";
-    }
 
         HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(formData);
         ResponseEntity<Map> response = restTemplate.exchange(captionServerUrl, HttpMethod.POST, request, Map.class);
         return (List<Map<String, Object>>) response.getBody().get("results");
-    @PostMapping("/recommendation/caption")
-    public String caption() {
-        return "shop/caption";
     }
 
     private List<String> extractCaptions(List<Map<String, Object>> captionResults) {
@@ -168,36 +192,24 @@ public class ShopController {
 
     private ResponseEntity<Map> requestAdviceFromCaptions(Map<String, Object> advicePayload) {
         return restTemplate.postForEntity(adviseFromImagesUrl, buildJsonRequest(advicePayload), Map.class);
-    @GetMapping("/cart")
-    public String cart() {
-        return "shop/cart";
     }
 
     private ResponseEntity<Map> requestAdviceFromQuery(Map<String, Object> queryPayload) {
         return restTemplate.postForEntity(adviseFromQueryUrl, buildJsonRequest(queryPayload), Map.class);
-    @GetMapping("/checkout")
-    public String checkout() {
-        return "shop/checkout";
     }
 
     private HttpEntity<Map<String, Object>> buildJsonRequest(Map<String, Object> body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         return new HttpEntity<>(body, headers);
-    @GetMapping("/contact")
-    public String contact() {
-        return "shop/contact";
     }
 
-    private HttpHeaders createMultipartHeaders(String filename) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        headers.setContentDispositionFormData("files", filename);
-        return headers;
-    @GetMapping("/services")
-    public String services() {
-        return "shop/services";
-    }
+    private HttpHeaders createMultipartHeaders(String filename){
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            headers.setContentDispositionFormData("files", filename);
+            return headers;
+        }
 
     private byte[] buildCsvFromCaptions(List<Map<String, Object>> results, Map<String, String> uploadedFiles) throws Exception {
         StringBuilder csv = new StringBuilder("Filename,URL,Caption\n");
