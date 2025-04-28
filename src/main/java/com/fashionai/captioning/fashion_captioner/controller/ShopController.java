@@ -32,10 +32,13 @@ public class ShopController {
     private final MinioService minioService;
 
     @Value("${ai.caption.url}")
-    private String dlServerUrl;
+    private String captionServerUrl;
 
-    @Value("${ai.advise.url}")
-    private String llmServerUrl;
+    @Value("${ai.advise-from-images.url}")
+    private String adviseFromImagesUrl;
+
+    @Value("${ai.advise-from-query.url}")
+    private String adviseFromQueryUrl;
 
     @GetMapping({"/", "index"})
     public String home() {
@@ -49,13 +52,16 @@ public class ShopController {
         }
 
         try {
-            Map<String, String> uploadedFileMap = handleUploads(images);
+            Map<String, String> uploadedFiles = uploadImagesToMinio(images);
             log.info("Upload MinIO thành công");
-            List<Map<String, Object>> aiResults = callDlServer(images);
-            log.info("AI server xử lý thành công");
-            byte[] csvBytes = saveCaptionsAndBuildCSV(aiResults, uploadedFileMap);
+
+            List<Map<String, Object>> captionResults = generateCaptionsFromServer(images);
+            log.info("AI server sinh captions thành công");
+
+            byte[] csvBytes = buildCsvFromCaptions(captionResults, uploadedFiles);
             log.info("Tạo CSV thành công");
-            return buildDownloadResponse(csvBytes);
+
+            return buildDownloadCsvResponse(csvBytes);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(List.of("Lỗi khi xử lý ảnh: " + e.getMessage()));
@@ -63,7 +69,7 @@ public class ShopController {
     }
 
     @PostMapping("/images/advise")
-    public ResponseEntity<?> getImageAdvice(
+    public ResponseEntity<?> getAdviceFromImages(
             @RequestParam("images") List<MultipartFile> images,
             @RequestParam("question") String question) {
 
@@ -72,45 +78,66 @@ public class ShopController {
         }
 
         try {
-            Map<String, String> uploadedMap = handleUploads(images);  
-            List<Map<String, Object>> captionResults = callDlServer(images);  
-            List<String> captions = extractCaptions(captionResults);  
+            Map<String, String> uploadedFiles = uploadImagesToMinio(images);
+            List<Map<String, Object>> captionResults = generateCaptionsFromServer(images);
+            List<String> captions = extractCaptions(captionResults);
 
-            Map<String, Object> advicePayload = buildAdvicePayload(captions, question);
-            ResponseEntity<Map> aiResponse = requestAiAdvice(advicePayload);
+            Map<String, Object> advicePayload = Map.of(
+                    "captions", captions,
+                    "question", question
+            );
 
+            ResponseEntity<Map> aiResponse = requestAdviceFromCaptions(advicePayload);
             return ResponseEntity.ok(aiResponse.getBody());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi xử lý tư vấn: " + e.getMessage());
+                    .body("Lỗi xử lý request: " + e.getMessage());
         }
     }
 
-    private Map<String, String> handleUploads(List<MultipartFile> images) throws Exception {
-        Map<String, String> uploadedMap = new HashMap<>();
+    @PostMapping("/query/advise")
+    public ResponseEntity<?> getAdviceFromQuery(@RequestParam("question") String question) {
+        if (question == null || question.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Vui lòng nhập câu hỏi.");
+        }
+
+        try {
+            Map<String, Object> payload = Map.of("question", question);
+            ResponseEntity<Map> llmResponse = requestAdviceFromQuery(payload);
+            return ResponseEntity.ok(llmResponse.getBody());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi xử lý request: " + e.getMessage());
+        }
+    }
+
+    // ======================= SUPPORTING FUNCTIONS ==========================
+
+    private Map<String, String> uploadImagesToMinio(List<MultipartFile> images) throws Exception {
+        Map<String, String> uploadedFiles = new HashMap<>();
         for (MultipartFile image : images) {
             String storedName = UUID.randomUUID() + "-" + image.getOriginalFilename();
             minioService.uploadFile(storedName, image.getInputStream(), image.getContentType());
-            uploadedMap.put(image.getOriginalFilename(), storedName);
+            uploadedFiles.put(image.getOriginalFilename(), storedName);
         }
-        return uploadedMap;
+        return uploadedFiles;
     }
 
-    private List<Map<String, Object>> callDlServer(List<MultipartFile> images) throws IOException {
+    private List<Map<String, Object>> generateCaptionsFromServer(List<MultipartFile> images) throws IOException {
         MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
         for (MultipartFile file : images) {
-            ByteArrayResource fileRes = new ByteArrayResource(file.getBytes()) {
+            ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
                 @NotNull
                 @Override
                 public String getFilename() {
                     return file.getOriginalFilename();
                 }
             };
-            formData.add("images", new HttpEntity<>(fileRes, createFileHeaders(file.getOriginalFilename())));
+            formData.add("images", new HttpEntity<>(fileResource, createMultipartHeaders(file.getOriginalFilename())));
         }
 
         HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(formData);
-        ResponseEntity<Map> response = restTemplate.exchange(dlServerUrl, HttpMethod.POST, request, Map.class);
+        ResponseEntity<Map> response = restTemplate.exchange(captionServerUrl, HttpMethod.POST, request, Map.class);
         return (List<Map<String, Object>>) response.getBody().get("results");
     }
 
@@ -118,68 +145,60 @@ public class ShopController {
         return captionResults.stream()
                 .map(result -> {
                     if (result.containsKey("caption")) {
-                        return ((List<String>) result.get("caption")).get(0);
+                        List<String> captions = (List<String>) result.get("caption");
+                        return captions.isEmpty() ? "" : captions.get(0);
                     }
                     return "";
                 })
                 .collect(Collectors.toList());
     }
 
-    private Map<String, Object> buildAdvicePayload(List<String> captions, String question) {
-        Map<String, Object> advicePayload = new HashMap<>();
-        advicePayload.put("captions", captions);
-        advicePayload.put("question", question);
-        return advicePayload;
+    private ResponseEntity<Map> requestAdviceFromCaptions(Map<String, Object> advicePayload) {
+        return restTemplate.postForEntity(adviseFromImagesUrl, buildJsonRequest(advicePayload), Map.class);
     }
 
-    private ResponseEntity<Map> requestAiAdvice(Map<String, Object> advicePayload) {
+    private ResponseEntity<Map> requestAdviceFromQuery(Map<String, Object> queryPayload) {
+        return restTemplate.postForEntity(adviseFromQueryUrl, buildJsonRequest(queryPayload), Map.class);
+    }
+
+    private HttpEntity<Map<String, Object>> buildJsonRequest(Map<String, Object> body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(advicePayload, headers);
-        return restTemplate.postForEntity(llmServerUrl, request, Map.class);
+        return new HttpEntity<>(body, headers);
     }
 
-    private byte[] saveCaptionsAndBuildCSV(List<Map<String, Object>> results, Map<String, String> fileMap) throws Exception {
+    private HttpHeaders createMultipartHeaders(String filename) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.setContentDispositionFormData("files", filename);
+        return headers;
+    }
+
+    private byte[] buildCsvFromCaptions(List<Map<String, Object>> results, Map<String, String> uploadedFiles) throws Exception {
         StringBuilder csv = new StringBuilder("Filename,URL,Caption\n");
 
         for (Map<String, Object> result : results) {
-            String original = (String) result.get("filename");
-            String stored = fileMap.get(original);
-            String url = minioService.getObjectUrl(stored);
+            String originalFilename = (String) result.get("filename");
+            String storedFilename = uploadedFiles.get(originalFilename);
+            String fileUrl = minioService.getObjectUrl(storedFilename);
 
-            if (result.containsKey("caption")) {
-                String caption = ((List<String>) result.get("caption")).get(0).replaceAll("\"", "\"\"");
-                captionRepository.save(new Caption(stored, url, caption));
-                csv.append("\"").append(original).append("\",\"").append(url).append("\",\"").append(caption).append("\"\n");
-            } else {
-                csv.append("\"").append(original).append("\",\"").append(url).append("\",\"Lỗi khi sinh caption\"\n");
-            }
+            String caption = result.containsKey("caption") ?
+                    ((List<String>) result.get("caption")).get(0).replaceAll("\"", "\"\"") :
+                    "Lỗi khi sinh caption";
+
+            captionRepository.save(new Caption(storedFilename, fileUrl, caption));
+            csv.append(String.format("\"%s\",\"%s\",\"%s\"\n", originalFilename, fileUrl, caption));
         }
 
         return csv.toString().getBytes(StandardCharsets.UTF_8);
     }
 
-    private ResponseEntity<byte[]> buildDownloadResponse(byte[] csvBytes) {
+    private ResponseEntity<byte[]> buildDownloadCsvResponse(byte[] csvBytes) {
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=captions.csv");
         headers.setContentType(MediaType.parseMediaType("text/csv"));
         headers.setContentLength(csvBytes.length);
         return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
     }
-
-    private HttpHeaders createFileHeaders(String filename) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        headers.set(HttpHeaders.CONTENT_DISPOSITION, "form-data; name=\"files\"; filename=\"" + filename + "\"");
-        return headers;
-    }
-
-//    @PostMapping("/query/advise")
-//    public ResponseEntity<Map<String, Object>> getAdviceFromQuery(@RequestBody Map<String, String> request) {
-//        String question = request.get("question");
-//        ResponseEntity<Map> response = restTemplate.postForEntity(aiQueryUrl, request, Map.class);
-//        return ResponseEntity.ok(response.getBody());
-//    }
-
-
 }
+
