@@ -21,7 +21,11 @@ public class AdminController {
     }
     @GetMapping("login")
     public String tables() {
-        return "login";
+        return "admin/login";
+    }
+    @GetMapping("register")
+    public String register() {
+        return "admin/register";
     }
     @GetMapping("user")
     public String user() {
