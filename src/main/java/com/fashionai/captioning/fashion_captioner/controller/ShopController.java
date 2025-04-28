@@ -37,9 +37,6 @@ public class ShopController {
     @Value("${ai.advise.url}")
     private String llmServerUrl;
 
-    @Value("") // TODO: Thêm vào sau
-    private String aiQueryUrl;
-
     @GetMapping({"/", "index"})
     public String home() {
         return "shop/index";
