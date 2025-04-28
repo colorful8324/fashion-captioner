@@ -19,9 +19,9 @@ public class AdminController {
     public String product() {
         return "admin/product";
     }
-    @GetMapping("tables")
+    @GetMapping("login")
     public String tables() {
-        return "admin/tables";
+        return "login";
     }
     @GetMapping("user")
     public String user() {
