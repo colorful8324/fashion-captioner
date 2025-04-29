@@ -1,7 +1,11 @@
 package com.fashionai.captioning.fashion_captioner.controller;
 
-import com.fashionai.captioning.fashion_captioner.model.Caption;
-import com.fashionai.captioning.fashion_captioner.repository.CaptionRepository;
+import com.fashionai.captioning.fashion_captioner.model.Advice;
+import com.fashionai.captioning.fashion_captioner.model.Image;
+import com.fashionai.captioning.fashion_captioner.model.Search;
+import com.fashionai.captioning.fashion_captioner.repository.AdviceRepository;
+import com.fashionai.captioning.fashion_captioner.repository.ImageRepository;
+import com.fashionai.captioning.fashion_captioner.repository.SearchRepository;
 import com.fashionai.captioning.fashion_captioner.service.MinioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +30,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ShopController {
 
-    private final CaptionRepository captionRepository;
+    private final ImageRepository imageRepository;
+    private final AdviceRepository adviceRepository;
+    private final SearchRepository searchRepository;
     private final RestTemplate restTemplate;
     private final MinioService minioService;
 
@@ -59,7 +65,7 @@ public class ShopController {
         return "shop/recommendation";
     }
 
-    @PostMapping("/recommendation/caption")
+    @PostMapping("/caption")
     public String caption() {
         return "shop/caption";
     }
@@ -91,11 +97,17 @@ public class ShopController {
         }
 
         try {
-            Map<String, String> uploadedFiles = uploadImagesToMinio(images);
-            log.info("Upload MinIO thành công");
+            Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
+            for (MultipartFile image : images) {
+                String uuidFilename = UUID.randomUUID() + "-" + image.getOriginalFilename();
+                uuidToFileMap.put(uuidFilename, image);
+            }
 
-            List<Map<String, Object>> captionResults = generateCaptionsFromServer(images);
+            List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
             log.info("AI server sinh captions thành công");
+
+            Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
+            log.info("Upload MinIO thành công");
 
             byte[] csvBytes = buildCsvFromCaptions(captionResults, uploadedFiles);
             log.info("Tạo CSV thành công");
@@ -107,6 +119,7 @@ public class ShopController {
         }
     }
 
+
     @PostMapping("/images/advise")
     public ResponseEntity<?> getAdviceFromImages(
             @RequestParam("images") List<MultipartFile> images,
@@ -117,9 +130,31 @@ public class ShopController {
         }
 
         try {
-            Map<String, String> uploadedFiles = uploadImagesToMinio(images);
-            List<Map<String, Object>> captionResults = generateCaptionsFromServer(images);
+            Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
+            for (MultipartFile image : images) {
+                String uniqueName = UUID.randomUUID() + "-" + image.getOriginalFilename();
+                uuidToFileMap.put(uniqueName, image);
+            }
+            List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
             List<String> captions = extractCaptions(captionResults);
+
+            Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
+            
+            for (Map<String, Object> result : captionResults) {
+                String originalFilename = (String) result.get("filename");
+                String storedFilename = uploadedFiles.get(originalFilename);
+                String fileUrl = minioService.getObjectUrl(storedFilename);
+
+                String caption = result.containsKey("caption") ?
+                        ((List<String>) result.get("caption")).get(0) :
+                        "Lỗi khi sinh caption";
+
+                Image savedImage = imageRepository.save(
+                        new Image(storedFilename, fileUrl, caption)
+                );
+
+                searchRepository.save(new Search(savedImage.getRecordId(), question));
+            }
 
             Map<String, Object> advicePayload = Map.of(
                     "captions", captions,
@@ -127,11 +162,22 @@ public class ShopController {
             );
 
             ResponseEntity<Map> aiResponse = requestAdviceFromCaptions(advicePayload);
+            Advice serverAdvice = saveAdviceToDb(question, aiResponse);
             return ResponseEntity.ok(aiResponse.getBody());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi xử lý request: " + e.getMessage());
         }
+    }
+
+    private Advice saveAdviceToDb(String question, ResponseEntity<Map> aiResponse) {
+        assert aiResponse.getBody() != null;
+        return adviceRepository.save(
+                new Advice(
+                        question,
+                        (String) aiResponse.getBody().get("answer")
+                )
+        );
     }
 
     @PostMapping("/query/advise")
@@ -143,40 +189,64 @@ public class ShopController {
         try {
             Map<String, Object> payload = Map.of("question", question);
             ResponseEntity<Map> llmResponse = requestAdviceFromQuery(payload);
-            return ResponseEntity.ok(llmResponse.getBody());
+
+            Map<String, Object> body = llmResponse.getBody();
+            if (body == null || !body.containsKey("answer") || !body.containsKey("images")) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Phản hồi từ AI không hợp lệ.");
+            }
+
+            String answer = (String) body.get("answer");
+            Advice serverAdvice = adviceRepository.save(new Advice(question, answer));
+
+            List<Map<String, Object>> images = (List<Map<String, Object>>) body.get("images");
+            for (Map<String, Object> image : images) {
+                Integer imageId = (Integer) image.get("record_id");
+                searchRepository.save(new Search(imageId, question));
+            }
+
+            return ResponseEntity.ok(body);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi xử lý request: " + e.getMessage());
         }
     }
 
-    private Map<String, String> uploadImagesToMinio(List<MultipartFile> images) throws Exception {
+
+    private Map<String, String> uploadImagesToMinio(Map<String, MultipartFile> uuidToFileMap) throws Exception {
         Map<String, String> uploadedFiles = new HashMap<>();
-        for (MultipartFile image : images) {
-            String storedName = UUID.randomUUID() + "-" + image.getOriginalFilename();
-            minioService.uploadFile(storedName, image.getInputStream(), image.getContentType());
-            uploadedFiles.put(image.getOriginalFilename(), storedName);
+        for (Map.Entry<String, MultipartFile> entry : uuidToFileMap.entrySet()) {
+            String uniqueName = entry.getKey();
+            MultipartFile image = entry.getValue();
+            minioService.uploadFile(uniqueName, image.getInputStream(), image.getContentType());
+            uploadedFiles.put(uniqueName, uniqueName);
         }
         return uploadedFiles;
     }
 
-    private List<Map<String, Object>> generateCaptionsFromServer(List<MultipartFile> images) throws IOException {
+
+    private List<Map<String, Object>> generateCaptionsFromServer(Map<String, MultipartFile> uuidToFileMap) throws IOException {
         MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
-        for (MultipartFile file : images) {
+        for (Map.Entry<String, MultipartFile> entry : uuidToFileMap.entrySet()) {
+            String uniqueName = entry.getKey();
+            MultipartFile file = entry.getValue();
+
             ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
                 @NotNull
                 @Override
                 public String getFilename() {
-                    return file.getOriginalFilename();
+                    return uniqueName;
                 }
             };
-            formData.add("images", new HttpEntity<>(fileResource, createMultipartHeaders(file.getOriginalFilename())));
+
+            formData.add("images", new HttpEntity<>(fileResource, createMultipartHeaders(uniqueName)));
         }
 
         HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(formData);
         ResponseEntity<Map> response = restTemplate.exchange(captionServerUrl, HttpMethod.POST, request, Map.class);
         return (List<Map<String, Object>>) response.getBody().get("results");
     }
+
 
     private List<String> extractCaptions(List<Map<String, Object>> captionResults) {
         return captionResults.stream()
@@ -223,7 +293,7 @@ public class ShopController {
                     ((List<String>) result.get("caption")).get(0).replaceAll("\"", "\"\"") :
                     "Lỗi khi sinh caption";
 
-            captionRepository.save(new Caption(storedFilename, fileUrl, caption));
+            imageRepository.save(new Image(storedFilename, fileUrl, caption));
             csv.append(String.format("\"%s\",\"%s\",\"%s\"\n", originalFilename, fileUrl, caption));
         }
 

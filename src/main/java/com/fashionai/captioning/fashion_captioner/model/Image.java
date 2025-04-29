@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Data
 @Table(name = "image_caption")
-public class Caption {
+public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "record_id")
@@ -30,7 +30,7 @@ public class Caption {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public Caption(String imageName, String imageUrl, String captionGenerated) {
+    public Image(String imageName, String imageUrl, String captionGenerated) {
         this.imageName = imageName;
         this.imageUrl = imageUrl;
         this.captionGenerated = captionGenerated;
