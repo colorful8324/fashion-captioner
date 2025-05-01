@@ -19,7 +19,7 @@ spring:
         username: root
         password: 1234
 server:
-    port: 8080 # Cổng chạy ứng dụng (mặc định, có thể đổi nếu cần)
+    port: 8081 # Cổng chạy ứng dụng (mặc định, có thể đổi nếu cần)
 ai:
     caption:
         url: http://127.0.0.1:8000/gen-cap
