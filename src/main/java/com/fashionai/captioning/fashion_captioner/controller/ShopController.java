@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -91,9 +92,10 @@ public class ShopController {
     }
 
     @PostMapping("/images/gen-cap")
-    public ResponseEntity<?> generateCaptions(@RequestParam("images") List<MultipartFile> images) {
+    public String generateCaptionsView(@RequestParam("images") List<MultipartFile> images, Model model) {
         if (images.size() > 100) {
-            return ResponseEntity.badRequest().body(List.of("Chỉ được phép upload tối đa 100 ảnh."));
+            model.addAttribute("error", "Chỉ được phép upload tối đa 100 ảnh.");
+            return "error";
         }
 
         try {
@@ -104,42 +106,9 @@ public class ShopController {
             }
 
             List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
-            log.info("AI server sinh captions thành công");
-
             Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
-            log.info("Upload MinIO thành công");
 
-            byte[] csvBytes = buildCsvFromCaptions(captionResults, uploadedFiles);
-            log.info("Tạo CSV thành công");
-
-            return buildDownloadCsvResponse(csvBytes);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(List.of("Lỗi khi xử lý ảnh: " + e.getMessage()));
-        }
-    }
-
-
-    @PostMapping("/images/advise")
-    public ResponseEntity<?> getAdviceFromImages(
-            @RequestParam("images") List<MultipartFile> images,
-            @RequestParam("question") String question) {
-
-        if (images.isEmpty() || question.isEmpty()) {
-            return ResponseEntity.badRequest().body("Vui lòng upload câu hỏi và ít nhất một ảnh.");
-        }
-
-        try {
-            Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
-            for (MultipartFile image : images) {
-                String uniqueName = UUID.randomUUID() + "-" + image.getOriginalFilename();
-                uuidToFileMap.put(uniqueName, image);
-            }
-            List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
-            List<String> captions = extractCaptions(captionResults);
-
-            Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
-            
+            List<Map<String, String>> displayResults = new ArrayList<>();
             for (Map<String, Object> result : captionResults) {
                 String originalFilename = (String) result.get("filename");
                 String storedFilename = uploadedFiles.get(originalFilename);
@@ -149,26 +118,74 @@ public class ShopController {
                         ((List<String>) result.get("caption")).get(0) :
                         "Lỗi khi sinh caption";
 
-                Image savedImage = imageRepository.save(
-                        new Image(storedFilename, fileUrl, caption)
-                );
+                imageRepository.save(new Image(storedFilename, fileUrl, caption));
 
+                displayResults.add(Map.of(
+                        "filename", originalFilename,
+                        "url", fileUrl,
+                        "caption", caption
+                ));
+            }
+
+            model.addAttribute("results", displayResults);
+            return "shop/caption-result";
+        } catch (Exception e) {
+            model.addAttribute("error", "Lỗi khi xử lý ảnh: " + e.getMessage());
+            return "error";
+        }
+    }
+
+
+
+    @PostMapping("/images/advise")
+    public String getAdviceFromImagesView(@RequestParam("images") List<MultipartFile> images,
+                                          @RequestParam("question") String question,
+                                          Model model) {
+
+        if (images.isEmpty() || question.isEmpty()) {
+            model.addAttribute("error", "Vui lòng upload câu hỏi và ít nhất một ảnh.");
+            return "error";
+        }
+
+        try {
+            Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
+            for (MultipartFile image : images) {
+                String uniqueName = UUID.randomUUID() + "-" + image.getOriginalFilename();
+                uuidToFileMap.put(uniqueName, image);
+            }
+
+            List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
+            List<String> captions = extractCaptions(captionResults);
+            Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
+
+            for (Map<String, Object> result : captionResults) {
+                String originalFilename = (String) result.get("filename");
+                String storedFilename = uploadedFiles.get(originalFilename);
+                String fileUrl = minioService.getObjectUrl(storedFilename);
+
+                String caption = result.containsKey("caption") ?
+                        ((List<String>) result.get("caption")).get(0) :
+                        "Lỗi khi sinh caption";
+
+                Image savedImage = imageRepository.save(new Image(storedFilename, fileUrl, caption));
                 searchRepository.save(new Search(savedImage.getRecordId(), question));
             }
 
-            Map<String, Object> advicePayload = Map.of(
-                    "captions", captions,
-                    "question", question
-            );
-
+            Map<String, Object> advicePayload = Map.of("captions", captions, "question", question);
             ResponseEntity<Map> aiResponse = requestAdviceFromCaptions(advicePayload);
-            Advice serverAdvice = saveAdviceToDb(question, aiResponse);
-            return ResponseEntity.ok(aiResponse.getBody());
+            Map<String, Object> responseBody = aiResponse.getBody();
+
+            Advice savedAdvice = saveAdviceToDb(question, aiResponse);
+
+            model.addAttribute("question", question);
+            model.addAttribute("answer", responseBody.get("answer"));
+            return "shop/advise-result";
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi xử lý request: " + e.getMessage());
+            model.addAttribute("error", "Lỗi xử lý request: " + e.getMessage());
+            return "error";
         }
     }
+
 
     private Advice saveAdviceToDb(String question, ResponseEntity<Map> aiResponse) {
         assert aiResponse.getBody() != null;
@@ -181,35 +198,41 @@ public class ShopController {
     }
 
     @PostMapping("/query/advise")
-    public ResponseEntity<?> getAdviceFromQuery(@RequestParam("question") String question) {
-        if (question == null || question.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Vui lòng nhập câu hỏi.");
-        }
-
+    public String getAdviceFromQuery(@RequestParam("question") String question, Model model) {
         try {
-            Map<String, Object> payload = Map.of("question", question);
-            ResponseEntity<Map> llmResponse = requestAdviceFromQuery(payload);
+            Map<String, String> requestBody = new HashMap<>();
+            requestBody.put("question", question);
 
-            Map<String, Object> body = llmResponse.getBody();
-            if (body == null || !body.containsKey("answer") || !body.containsKey("images")) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Phản hồi từ AI không hợp lệ.");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+
+            // Gọi Flask server
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    adviseFromQueryUrl,
+                    HttpMethod.POST,
+                    request,
+                    Map.class
+            );
+
+            Map<String, Object> responseBody = response.getBody();
+
+            if (responseBody == null) {
+                model.addAttribute("error", "Không nhận được phản hồi từ server.");
+                return "shop/advise-result";
             }
 
-            String answer = (String) body.get("answer");
-            Advice serverAdvice = adviceRepository.save(new Advice(question, answer));
+            model.addAttribute("question", question);
+            model.addAttribute("answer", responseBody.get("answer"));
+            model.addAttribute("images", responseBody.get("images")); // là list image objects
 
-            List<Map<String, Object>> images = (List<Map<String, Object>>) body.get("images");
-            for (Map<String, Object> image : images) {
-                Integer imageId = (Integer) image.get("record_id");
-                searchRepository.save(new Search(imageId, question));
-            }
-
-            return ResponseEntity.ok(body);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi xử lý request: " + e.getMessage());
+            log.error("Lỗi khi gọi API từ query/advise", e);
+            model.addAttribute("error", "Đã xảy ra lỗi khi xử lý yêu cầu: " + e.getMessage());
         }
+
+        return "shop/advise-result";
     }
 
 
