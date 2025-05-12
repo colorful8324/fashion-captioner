@@ -52,5 +52,10 @@ public class ShopController {
         return "shop/services";
     }
 
+    @GetMapping("/recommendation/advise")
+    public String advise() {
+        return "shop/advise";
+    }
+
 
 }
