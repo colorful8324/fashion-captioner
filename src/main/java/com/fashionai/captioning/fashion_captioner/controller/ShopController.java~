@@ -56,4 +56,6 @@ public class ShopController {
     public String advise() {
         return "shop/advise";
     }
+
+
 }
