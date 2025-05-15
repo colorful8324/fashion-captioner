@@ -14,10 +14,18 @@ spring:
         multipart:
             max-file-size: 10MB
             max-request-size: 10MB
-    datasource:
-        url: jdbc:mysql://localhost:3306/image_captioning
-        username: root
-        password: root
+    mysql:
+        datasource:
+            jdbc-url: jdbc:mysql://localhost:3306/image_captioning
+            username: root
+            password: 1234
+            driver-class-name: com.mysql.cj.jdbc.Driver
+    h2:
+        datasource:
+            jdbc-url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+            username: sa
+            password:
+            driver-class-name: org.h2.Driver
 server:
     port: 8081 # Cổng chạy ứng dụng (mặc định, có thể đổi nếu cần)
 ai:

@@ -7,19 +7,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-    @GetMapping("/dashboard")
+    @GetMapping("dashboard")
     public String dashboard() {
         return "admin/dashboard";
     }
-    @GetMapping("/category")
+    @GetMapping("category")
     public String category() {
         return "admin/category";
     }
-    @GetMapping("/product")
+    @GetMapping("product")
     public String product() {
         return "admin/product";
     }
-    @GetMapping("/user")
+    @GetMapping("login")
+    public String tables() {
+        return "admin/login";
+    }
+    @GetMapping("register")
+    public String register() {
+        return "admin/register";
+    }
+    @GetMapping("user")
     public String user() {
         return "admin/user";
     }
