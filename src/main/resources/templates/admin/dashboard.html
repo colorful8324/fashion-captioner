@@ -22,13 +22,13 @@
 <div class="wrapper">
   <div class="sidebar" data-color="white" data-active-color="danger">
     <div class="logo">
-      <a th:href="@{https://www.creative-tim.com}" class="simple-text logo-mini">
+      <a href="#" class="simple-text logo-mini">
         <!-- Logo image (commented out, enable if needed) -->
         <!-- <div class="logo-image-small">
             <img th:src="@{/admin/img/logo-small.png}">
         </div> -->
       </a>
-      <a th:href="@{https://www.creative-tim.com}" class="simple-text logo-normal">
+      <a href="#" class="simple-text logo-normal">
         Funi Dashboard
         <!-- Logo image (commented out, enable if needed) -->
         <!-- <div class="logo-image-big">
@@ -117,13 +117,17 @@
               </div>
             </li>
             <li class="nav-item">
-              <a class="nav-link btn-rotate" href="javascript:;">
-                <i class="nc-icon nc-settings-gear-65"></i>
+              <form id="logoutForm" action="/logout" method="post" style="display: none;">
+                <input type="hidden" name="_csrf" value="${_csrf.token}"/>
+              </form>
+              <a class="nav-link btn-rotate" href="#" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
+                <i class="nc-icon nc-button-power"></i> <!-- icon nút nguồn / logout -->
                 <p>
-                  <span class="d-lg-none d-md-block">Account</span>
+                  <span class="d-lg-none d-md-block">Logout</span>
                 </p>
               </a>
             </li>
+
           </ul>
         </div>
       </div>
@@ -307,14 +311,14 @@
         <div class="row">
           <nav class="footer-nav">
             <ul>
-              <li><a th:href="@{https://www.creative-tim.com}" target="_blank">Creative Tim</a></li>
+              <li><a th:href="@{https://www.creative-tim.com}" target="_blank">Creative</a></li>
               <li><a th:href="@{https://www.creative-tim.com/blog}" target="_blank">Blog</a></li>
               <li><a th:href="@{https://www.creative-tim.com/license}" target="_blank">Licenses</a></li>
             </ul>
           </nav>
           <div class="credits ml-auto">
                             <span class="copyright">
-                                © <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2025</span>, made with <i class="fa fa-heart heart"></i> by Creative Tim
+                                © <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2025</span>
                             </span>
           </div>
         </div>
