@@ -17,7 +17,7 @@ spring:
     datasource:
         url: jdbc:mysql://localhost:3306/image_captioning
         username: root
-        password: root
+        password: 1234
 server:
     port: 8081 # Cổng chạy ứng dụng (mặc định, có thể đổi nếu cần)
 ai:

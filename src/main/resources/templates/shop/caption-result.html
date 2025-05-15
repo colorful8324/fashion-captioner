@@ -5,12 +5,19 @@
 </head>
 <body>
 <h2>Caption Results</h2>
+
+<!-- Kiểm tra và hiển thị lỗi nếu có -->
+<div th:if="${error}">
+    <p style="color: red; font-weight: bold;" th:text="${error}"></p>
+</div>
+
 <ul>
     <li th:each="item : ${results}">
         <strong th:text="${item.filename}"></strong><br/>
         <span th:text="${item.caption}"></span>
     </li>
 </ul>
+
 <a href="/">Go Back</a>
 </body>
 </html>
