@@ -15,7 +15,7 @@
     <link th:href="@{/shop/css/tiny-slider.css}" rel="stylesheet">
     <link th:href="@{/shop/css/style.css}" rel="stylesheet">
 
-    <title>Caption - Furni</title>
+    <title>Product Detail - Furni</title>
 
     <style>
         .fashion-upload-section .custom-img {
@@ -36,11 +36,19 @@
         }
 
         .fashion-upload-section .description-block {
-            max-height: 400px;
-            overflow-y: auto;
             padding: 10px;
-            font-size: 24px;
-            color: #666;
+            font-size: 20px;
+            color: #333;
+            border-top: 1px solid #ccc;
+            margin-top: 15px;
+        }
+
+        .fashion-upload-section .advise-block {
+            padding: 10px;
+            font-size: 20px;
+            color: #333;
+            border-top: 1px solid #ccc;
+            margin-top: 15px;
         }
 
         .fashion-upload-section .button-wrapper {
@@ -60,40 +68,6 @@
 
         .fashion-upload-section .btn-light:hover {
             background-color: #333;
-        }
-
-        /* Carousel Indicator Styling */
-        .carousel-indicators {
-            bottom: -50px;
-        }
-
-        .carousel-indicators button {
-            background-color: #666;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin: 0 5px;
-            border: none;
-        }
-
-        .carousel-indicators .active {
-            background-color: #000;
-        }
-
-        /* Carousel Control Styling */
-        .carousel-control-prev, .carousel-control-next {
-            width: 5%;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 5px;
-        }
-
-        .carousel-control-prev-icon, .carousel-control-next-icon {
-            display: none; /* Hide default Bootstrap icons */
-        }
-
-        .carousel-control-prev i, .carousel-control-next i {
-            color: #000; /* Black color for arrows */
-            font-size: 2rem;
         }
     </style>
 </head>
@@ -130,7 +104,7 @@
         <div class="row justify-content-between">
             <div class="col-lg-5">
                 <div class="intro-excerpt">
-                    <h1>Caption</h1>
+                    <h1>Advise</h1>
                 </div>
             </div>
             <div class="col-lg-7"></div>
@@ -144,73 +118,33 @@
     <div class="container">
         <div class="upload-form-wrapper" id="uploadForm">
             <div class="upload-form-content">
-                <!-- Carousel for multiple images -->
-                <div id="fashionCarousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-inner">
-                        <!-- First Item -->
-                        <div class="carousel-item active">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img">
-                                </div>
-                                <div class="col-md-7 description-wrapper">
-                                    <div class="description-block">
-                                        <p><strong>Description</strong></p>
-                                        <p>Ghế bành với thiết kế hiện đại, đệm bọc vải cao cấp mềm mại, mang lại cảm giác êm ái khi sử dụng.
-                                            Phần chân ghế bằng gỗ tự nhiên chắc chắn, kết hợp với kiểu dáng tinh tế, phù hợp cho phòng khách,
-                                            phòng đọc sách hoặc không gian làm việc.
-                                        </p>
-                                    </div>
-                                </div>
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img w-100">
                             </div>
-                        </div>
-                        <!-- Second Item -->
-                        <div class="carousel-item">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <img th:src="@{/shop/images/product-2.png}" alt="Sofa góc hiện đại" class="img-fluid custom-img">
-                                </div>
-                                <div class="col-md-7 description-wrapper">
-                                    <div class="description-block">
-                                        <p><strong>Description</strong></p>
-                                        <p>Sofa góc với thiết kế tối ưu không gian, chất liệu vải linen cao cấp, thoáng khí và bền bỉ.
-                                            Kết cấu khung thép chắc chắn, đệm mút êm ái, phù hợp cho phòng khách lớn hoặc văn phòng sang trọng.
-                                        </p>
-                                    </div>
-                                </div>
+                            <div class="col-6">
+                                <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img w-100">
                             </div>
-                        </div>
-                        <!-- Third Item -->
-                        <div class="carousel-item">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <img th:src="@{/shop/images/product-3.png}" alt="Bàn cà phê tối giản" class="img-fluid custom-img">
-                                </div>
-                                <div class="col-md-7 description-wrapper">
-                                    <div class="description-block">
-                                        <p><strong>Description</strong></p>
-                                        <p>Bàn cà phê với thiết kế tối giản, mặt bàn bằng gỗ công nghiệp phủ veneer, chân thép sơn tĩnh điện.
-                                            Kích thước nhỏ gọn, dễ dàng di chuyển, phù hợp cho phòng khách, phòng ngủ hoặc góc làm việc.
-                                        </p>
-                                    </div>
-                                </div>
+                            <div class="col-6">
+                                <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img w-100">
+                            </div>
+                            <div class="col-6">
+                                <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img w-100">
                             </div>
                         </div>
                     </div>
-                    <!-- Carousel Controls with Font Awesome Icons -->
-                    <button class="carousel-control-prev" type="button" data-bs-target="#fashionCarousel" data-bs-slide="prev">
-                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#fashionCarousel" data-bs-slide="next">
-                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                    <!-- Carousel Indicators -->
-                    <div class="carousel-indicators">
-                        <button type="button" data-bs-target="#fashionCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                        <button type="button" data-bs-target="#fashionCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                        <button type="button" data-bs-target="#fashionCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+
+                    <div class="col-md-7 description-wrapper">
+                        <div class="description-block">
+                            <p><strong>Question</strong></p>
+                            <p>Sản phẩm này có phù hợp để tạo không gian thư giãn trong phòng khách hoặc phòng đọc sách không? Có gợi ý nào để phối hợp nội thất cho phù hợp với thiết kế của ghế không?</p>
+
+                        </div>
+                        <div class="advise-block">
+                            <p><strong>Advise:</strong> Ghế bành với kiểu dáng hiện đại này rất lý tưởng để tạo điểm nhấn cho không gian thư giãn. Bạn nên đặt ghế cạnh cửa sổ để tận dụng ánh sáng tự nhiên, kết hợp thêm một bàn cà phê nhỏ và thảm mềm để tăng tính thẩm mỹ và sự ấm cúng cho căn phòng.</p>
+                        </div>
                     </div>
                 </div>
             </div>

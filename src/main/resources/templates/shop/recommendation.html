@@ -15,6 +15,12 @@
 	<link th:href="@{/shop/css/tiny-slider.css}" rel="stylesheet">
 	<link th:href="@{/shop/css/style.css}" rel="stylesheet">
 	<title>Recommendation - Furni</title>
+	<style>
+		/* Đảm bảo rằng phần nhập input và submit button căn giữa */
+		.single-upload-section .d-flex {
+			justify-content: center;
+		}
+	</style>
 </head>
 <body>
 
@@ -61,14 +67,37 @@
 </div>
 <!-- End Hero Section -->
 
-<!-- Start Fashion Upload Section -->
-<div class="fashion-upload-section py-5">
+<!-- Start Navigation Links to Switch Between Forms -->
+<div class="container my-5">
+	<ul class="nav nav-pills justify-content-center" id="uploadNavigator">
+		<li class="nav-item">
+			<a class="nav-link active" href="#" onclick="showForm('uploadForm'); setActiveTab(this)">
+				<i class="fas fa-upload me-2"></i> Upload Multiple Images
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" href="#" onclick="showForm('singleUploadForm'); setActiveTab(this)">
+				<i class="fas fa-image me-2"></i> Upload Single Image
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" href="#" onclick="showForm('questionOnlyForm'); setActiveTab(this)">
+				<i class="fas fa-question-circle me-2"></i> Ask Only
+			</a>
+		</li>
+	</ul>
+</div>
+
+
+<!-- Start Fashion Upload Section (Multiple Images Upload) -->
+<div id="uploadForm" class="fashion-upload-section py-5">
 	<div class="container">
+		<!-- Description -->
 		<p class="fst-italic mb-4 text-muted text-center fs-5">
-			Let us help you perfect your appearance &lt;3
+			Select multiple fashion images and ask a question
 		</p>
 
-		<!-- Upload Icon -->
+		<!-- Upload Icon for Multiple Images -->
 		<div class="mb-4 d-flex justify-content-center">
 			<label for="fashionUpload" class="rounded-circle shadow d-flex align-items-center justify-content-center"
 				   style="background-color: #f1ede9; width: 120px; height: 120px; cursor: pointer;">
@@ -76,21 +105,80 @@
 			</label>
 		</div>
 
-		<!-- Description -->
-		<p class="text-secondary text-center mb-4 fs-5 fw-medium">
-			Upload a fashion image you want to explore
-		</p>
-
 		<!-- Upload Form -->
 		<form th:action="@{/recommendation/caption}" method="post" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
-			<input type="file" name="fashionImage" id="fashionUpload" accept="image/*" class="form-control d-none"
-				   onchange="document.getElementById('uploadBtn').classList.remove('d-none');">
+			<input type="file" name="images" id="fashionUpload" accept="image/*" class="form-control d-none"
+				   multiple
+				   onchange="handleFileSelect(event)">
+
+			<!-- Preview Container -->
+			<div id="preview" class="d-flex flex-wrap justify-content-center gap-3 mb-3"></div>
+
 			<button type="submit" class="btn btn-success mt-3 px-4 d-none" id="uploadBtn">Upload</button>
 		</form>
-
 	</div>
 </div>
 <!-- End Fashion Upload Section -->
+
+
+
+<!-- Start Single Image Upload Section -->
+<div id="singleUploadForm" class="single-upload-section py-5" style="display: none;">
+	<div class="container">
+		<p class="fst-italic mb-4 text-muted text-center fs-5">
+			Select one fashion image and ask a question
+		</p>
+
+		<form th:action="@{/recommendation/advise}" method="post" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
+			<!-- Upload Icon for Single Image -->
+			<div class="mb-3 d-flex justify-content-center">
+				<label for="singleUpload" class="rounded-circle shadow d-flex align-items-center justify-content-center"
+					   style="background-color: #f1ede9; width: 120px; height: 120px; cursor: pointer;">
+					<i class="fas fa-upload" style="font-size: 2.5rem; color: #6b4f34;"></i>
+				</label>
+			</div>
+
+			<!-- Hidden input for file upload -->
+			<input type="file" name="images" id="singleUpload" accept="image/*" class="form-control d-none"
+				   onchange="handleSingleFileSelect(event)">
+
+			<!-- Preview Container -->
+			<div id="previewSingle" class="mb-3 d-flex justify-content-center"></div>
+
+			<!-- Question input -->
+			<div class="d-flex justify-content-center">
+				<input type="text" name="question" placeholder="Enter your question"
+					   class="form-control mb-3" style="max-width: 400px;" required>
+			</div>
+
+			<!-- Submit Button -->
+			<div class="d-flex justify-content-center">
+				<button type="submit" class="btn btn-primary px-4 d-none" id="uploadBtnSingle">Submit</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+
+
+<!-- Start Ask Question Only Form -->
+<div id="questionOnlyForm" class="question-only-section py-5" style="display: none;">
+	<div class="container">
+		<p class="fst-italic mb-4 text-muted text-center fs-5">
+			Ask a question without uploading an image
+		</p>
+
+		<!-- Question Form -->
+		<form th:action="@{/recommendation/query}" method="post" class="d-flex flex-column align-items-center">
+			<div class="mb-3" style="width: 100%; max-width: 500px;">
+				<input type="text" name="question" class="form-control" placeholder="Enter your question..." required>
+			</div>
+			<button type="submit" class="btn btn-secondary px-4">Ask</button>
+		</form>
+	</div>
+</div>
+<!-- End Ask Question Only Form -->
+
 
 <!-- Start Footer Section -->
 <footer class="footer-section">
@@ -144,6 +232,88 @@
 	</div>
 </footer>
 <!-- End Footer Section -->
+
+<!-- JS to handle file previews -->
+<script>
+	function showForm(formId) {
+		// Ẩn tất cả các form
+		['uploadForm', 'singleUploadForm', 'questionOnlyForm'].forEach(id => {
+			document.getElementById(id).style.display = 'none';
+		});
+
+
+		// Hiển thị form được chọn
+		document.getElementById(formId).style.display = 'block';
+	}
+
+	// Hiển thị mặc định form upload nhiều ảnh khi tải trang
+	window.onload = function() {
+		showForm('uploadForm');
+	};
+
+	function handleFileSelect(event) {
+		const files = event.target.files;
+		const preview = document.getElementById('preview');
+		const uploadBtn = document.getElementById('uploadBtn');
+		preview.innerHTML = ''; // Clear old previews
+
+		if (files.length > 0) {
+			uploadBtn.classList.remove('d-none');
+		}
+
+		Array.from(files).forEach(file => {
+			if (!file.type.startsWith('image/')) return;
+
+			const reader = new FileReader();
+			reader.onload = e => {
+				const img = document.createElement('img');
+				img.src = e.target.result;
+				img.classList.add('img-thumbnail');
+				img.style.maxWidth = '120px';
+				img.style.maxHeight = '120px';
+				preview.appendChild(img);
+			};
+			reader.readAsDataURL(file);
+		});
+	}
+
+	function handleSingleFileSelect(event) {
+		const file = event.target.files[0];
+		const preview = document.getElementById('previewSingle');
+		const uploadBtn = document.getElementById('uploadBtnSingle');
+		preview.innerHTML = '';
+
+		if (!file || !file.type.startsWith('image/')) {
+			uploadBtn.classList.add('d-none');
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = e => {
+			const img = document.createElement('img');
+			img.src = e.target.result;
+			img.classList.add('img-thumbnail');
+			img.style.maxWidth = '200px';
+			img.style.maxHeight = '200px';
+			img.style.objectFit = 'cover';
+			preview.appendChild(img);
+		};
+
+		reader.readAsDataURL(file);
+		uploadBtn.classList.remove('d-none');
+	}
+
+	function setActiveTab(tab) {
+		// Lấy tất cả các liên kết trong thanh điều hướng
+		var tabs = document.querySelectorAll('.nav-link');
+		// Loại bỏ lớp 'active' khỏi tất cả các liên kết
+		tabs.forEach(function(tab) {
+			tab.classList.remove('active');
+		});
+		// Thêm lớp 'active' vào tab được click
+		tab.classList.add('active');
+	}
+</script>
 
 <script th:src="@{/shop/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/shop/js/tiny-slider.js}"></script>

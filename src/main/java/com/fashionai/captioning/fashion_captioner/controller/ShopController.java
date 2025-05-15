@@ -66,19 +66,19 @@ public class ShopController {
         return "shop/recommendation";
     }
 
-    @PostMapping("/caption")
+    @PostMapping("/recommendation/caption")
     public String caption() {
         return "shop/caption";
-    }
-
-    @GetMapping("/checkout")
-    public String checkout() {
-        return "shop/checkout";
     }
 
     @GetMapping("/cart")
     public String cart() {
         return "shop/cart";
+    }
+
+    @GetMapping("/checkout")
+    public String checkout() {
+        return "shop/checkout";
     }
 
     @GetMapping("/contact")
@@ -91,12 +91,32 @@ public class ShopController {
         return "shop/services";
     }
 
+    @PostMapping("/recommendation/advise")
+    public String advise() {
+        return "shop/advise";
+    }
+
+    @GetMapping("/recommendation/advise")
+    public String advises() {
+        return "shop/advise";
+    }
+
+    @PostMapping("/recommendation/query")
+    public String query() {
+        return "shop/query";
+    }
+
     @PostMapping("/images/gen-cap")
     public String generateCaptionsView(@RequestParam("images") List<MultipartFile> images, Model model) {
+        System.out.println("=== BẮT ĐẦU XỬ LÝ ===");
+
         if (images.size() > 100) {
             model.addAttribute("error", "Chỉ được phép upload tối đa 100 ảnh.");
             return "error";
         }
+
+        System.out.println("Số lượng ảnh nhận được: " + images.size());
+        images.forEach(img -> System.out.println("Ảnh: " + img.getOriginalFilename()));
 
         try {
             Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
@@ -105,20 +125,36 @@ public class ShopController {
                 uuidToFileMap.put(uuidFilename, image);
             }
 
+            System.out.println("Tên file đã gắn UUID:");
+            uuidToFileMap.keySet().forEach(System.out::println);
+
             List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
+            System.out.println("Caption kết quả trả về:");
+            captionResults.forEach(result -> System.out.println(result));
+
             Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
+            System.out.println("Mapping filename → stored filename (MinIO):");
+            uploadedFiles.forEach((k, v) -> System.out.println(k + " → " + v));
 
             List<Map<String, String>> displayResults = new ArrayList<>();
             for (Map<String, Object> result : captionResults) {
                 String originalFilename = (String) result.get("filename");
+
                 String storedFilename = uploadedFiles.get(originalFilename);
+                if (storedFilename == null) {
+                    System.out.println("⚠️ Không tìm thấy '" + originalFilename + "' trong uploadedFiles");
+                    continue; // bỏ qua nếu không khớp
+                }
+
                 String fileUrl = minioService.getObjectUrl(storedFilename);
+                System.out.println("URL của ảnh: " + fileUrl);
 
                 String caption = result.containsKey("caption") ?
                         ((List<String>) result.get("caption")).get(0) :
                         "Lỗi khi sinh caption";
 
                 imageRepository.save(new Image(storedFilename, fileUrl, caption));
+                System.out.println("Đã lưu ảnh vào DB: " + storedFilename);
 
                 displayResults.add(Map.of(
                         "filename", originalFilename,
@@ -128,12 +164,16 @@ public class ShopController {
             }
 
             model.addAttribute("results", displayResults);
+            System.out.println("=== XỬ LÝ HOÀN TẤT ===");
             return "shop/caption-result";
         } catch (Exception e) {
+            System.out.println("❌ LỖI TRONG QUÁ TRÌNH XỬ LÝ");
+            e.printStackTrace();  // In ra lỗi chi tiết
             model.addAttribute("error", "Lỗi khi xử lý ảnh: " + e.getMessage());
             return "error";
         }
     }
+
 
 
 
@@ -179,11 +219,13 @@ public class ShopController {
 
             model.addAttribute("question", question);
             model.addAttribute("answer", responseBody.get("answer"));
-            return "shop/advise-result";
         } catch (Exception e) {
-            model.addAttribute("error", "Lỗi xử lý request: " + e.getMessage());
-            return "error";
+            System.out.println("❌ LỖI TRONG QUÁ TRÌNH XỬ LÝ");
+            model.addAttribute("error", "Đã xảy ra lỗi khi xử lý yêu cầu: " + e.getMessage());
         }
+
+        return "shop/advise-result";
+
     }
 
 
@@ -298,11 +340,11 @@ public class ShopController {
     }
 
     private HttpHeaders createMultipartHeaders(String filename){
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-            headers.setContentDispositionFormData("files", filename);
-            return headers;
-        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.setContentDispositionFormData("files", filename);
+        return headers;
+    }
 
     private byte[] buildCsvFromCaptions(List<Map<String, Object>> results, Map<String, String> uploadedFiles) throws Exception {
         StringBuilder csv = new StringBuilder("Filename,URL,Caption\n");
