@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý người dùng</title>
+  <link th:href="@{/admin/css/bootstrap.min.css}" rel="stylesheet" />
+</head>
+<body>
+<div class="container mt-5">
+  <h3 th:text="${user.id} == null ? 'Tạo người dùng mới' : 'Chỉnh sửa người dùng'"></h3>
+
+  <form th:action="@{/admin/users/save}" th:object="${user}" method="post">
+    <input type="hidden" th:field="*{id}" />
+
+    <div class="form-group">
+      <label for="name">Họ tên</label>
+      <input type="text" class="form-control" id="name" th:field="*{name}" required />
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" class="form-control" id="email" th:field="*{email}" required />
+    </div>
+
+    <div class="form-group">
+      <label for="role">Vai trò</label>
+      <select class="form-control" id="role" th:field="*{role}">
+        <option value="Admin">Admin</option>
+        <option value="Khách hàng">Khách hàng</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="status">Trạng thái</label>
+      <select class="form-control" id="status" th:field="*{status}">
+        <option value="Hoạt động">Hoạt động</option>
+        <option value="Bị khóa">Bị khóa</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a th:href="@{/admin/users}" class="btn btn-secondary">Hủy</a>
+  </form>
+</div>
+</body>
+</html>
