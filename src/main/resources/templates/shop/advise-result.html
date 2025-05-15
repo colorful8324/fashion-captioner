@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Kết quả tư vấn</title>
+</head>
+<body>
+    <h2>Kết quả tư vấn từ câu hỏi</h2>
+
+    <div th:if="${error != null}">
+        <p style="color: red;" th:text="${error}"></p>
+    </div>
+
+    <div th:if="${question != null}">
+        <p><strong>Câu hỏi:</strong> <span th:text="${question}"></span></p>
+        <p><strong>Tư vấn:</strong> <span th:text="${answer}"></span></p>
+    </div>
+
+    <div th:if="${images != null}">
+        <h3>Hình ảnh gợi ý:</h3>
+        <div th:each="img : ${images}">
+            <img th:src="${img.image_url}" alt="Image" width="200"/><br/>
+            <small>ID: <span th:text="${img.record_id}"></span></small><br/><br/>
+        </div>
+    </div>
+
+    <a href="/">Quay lại trang chủ</a>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Caption Result</title>
+</head>
+<body>
+<h2>Caption Results</h2>
+<ul>
+    <li th:each="item : ${results}">
+        <strong th:text="${item.filename}"></strong><br/>
+        <span th:text="${item.caption}"></span>
+    </li>
+</ul>
+<a href="/">Go Back</a>
+</body>
+</html>

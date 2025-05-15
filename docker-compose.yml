@@ -1,0 +1,85 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .              # Root where your Spring Boot Dockerfile is
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+      - minio
+      - ai_caption
+      - ai_advise
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/image_captioning
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 1234
+      AI_CAPTION_URL: http://ai_caption:8000/gen-cap
+      AI_ADVISE_FROM_IMAGES_URL: http://ai_advise:5000/images/advise
+      AI_ADVISE_FROM_QUERY_URL: http://ai_advise:5000/query/advise
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: fashion-captioner
+    networks:
+      - backend
+    restart: always
+
+  db:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_DATABASE: image_captioning
+      MYSQL_ROOT_PASSWORD: 1234
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend
+    ports:
+      - "3307:3306"
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - minio_data:/data
+      - ./init-bucket.sh:/docker-entrypoint-initdb.d/init-bucket.sh
+    ports:
+      - "9000:9000"
+    command: server /data
+    networks:
+      - backend
+
+  ai_caption:
+    build:
+      context: ./ai_caption
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - backend
+
+  ai_advise:
+    build:
+      context: ./ai_advise
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5000:5000"
+    networks:
+      - backend
+
+volumes:
+  mysql_data:
+  minio_data:
+
+networks:
+  backend:
+    driver: bridge
