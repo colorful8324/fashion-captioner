@@ -1,11 +1,11 @@
 package com.fashionai.captioning.fashion_captioner.controller;
 
-import com.fashionai.captioning.fashion_captioner.model.Advice;
-import com.fashionai.captioning.fashion_captioner.model.Image;
-import com.fashionai.captioning.fashion_captioner.model.Search;
-import com.fashionai.captioning.fashion_captioner.repository.AdviceRepository;
-import com.fashionai.captioning.fashion_captioner.repository.ImageRepository;
-import com.fashionai.captioning.fashion_captioner.repository.SearchRepository;
+import com.fashionai.captioning.fashion_captioner.model.mysql.Advice;
+import com.fashionai.captioning.fashion_captioner.model.mysql.Image;
+import com.fashionai.captioning.fashion_captioner.model.mysql.Search;
+import com.fashionai.captioning.fashion_captioner.repository.mysql.AdviceRepository;
+import com.fashionai.captioning.fashion_captioner.repository.mysql.ImageRepository;
+import com.fashionai.captioning.fashion_captioner.repository.mysql.SearchRepository;
 import com.fashionai.captioning.fashion_captioner.service.MinioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

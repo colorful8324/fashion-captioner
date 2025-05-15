@@ -1,4 +1,4 @@
-package com.fashionai.captioning.fashion_captioner.model;
+package com.fashionai.captioning.fashion_captioner.model.mysql;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
