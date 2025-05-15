@@ -1,4 +1,0 @@
-package com.fashionai.captioning.fashion_captioner.repository.h2;
-
-public class ProductRepository {
-}
