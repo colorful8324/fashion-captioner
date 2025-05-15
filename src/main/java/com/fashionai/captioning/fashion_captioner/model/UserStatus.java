@@ -1,6 +1,6 @@
 package com.fashionai.captioning.fashion_captioner.model;
 
-public enum Status {
+public enum UserStatus {
     ACTIVE(0),
     SUSPENDED(1);
 
@@ -9,7 +9,7 @@ public enum Status {
         return this.value;
     }
 
-    Status(int value) {
+    UserStatus(int value) {
         this.value = value;
     }
 }

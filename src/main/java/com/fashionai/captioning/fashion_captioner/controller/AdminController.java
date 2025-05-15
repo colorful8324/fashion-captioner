@@ -18,14 +18,14 @@ public class AdminController {
     public String dashboard() {
         return "admin/dashboard";
     }
-    @GetMapping("category")
-    public String category() {
-        return "admin/category";
-    }
-    @GetMapping("product")
-    public String product() {
-        return "admin/product";
-    }
+//    @GetMapping("category")
+//    public String category() {
+//        return "admin/category";
+//    }
+//    @GetMapping("product")
+//    public String product() {
+//        return "admin/product";
+//    }
     @GetMapping("login")
     public String tables() {
         return "login";
