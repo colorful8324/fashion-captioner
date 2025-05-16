@@ -86,7 +86,7 @@
                 <li><a class="nav-link" th:href="@{/shop}">Shop</a></li>
                 <li><a class="nav-link" th:href="@{/about}">About us</a></li>
                 <li><a class="nav-link" th:href="@{/services}">Services</a></li>
-                <li class="nav-item active"><a class="nav-link" th:href="@{/caption}">Recommendation</a></li>
+                <li class="nav-item active"><a class="nav-link" th:href="@{/recommendation}">Recommendation</a></li>
                 <li><a class="nav-link" th:href="@{/contact}">Contact us</a></li>
             </ul>
             <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
@@ -120,18 +120,17 @@
             <div class="upload-form-content">
                 <div class="row align-items-center">
                     <div class="col-md-5">
-                        <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img">
+                        <!-- Nếu bạn có ảnh thực tế, bạn có thể truyền thêm biến 'imageUrl' vào model -->
+                        <img th:src="@{/shop/images/product-1.png}" alt="Ảnh sản phẩm" class="img-fluid custom-img">
                     </div>
                     <div class="col-md-7 description-wrapper">
                         <div class="description-block">
-                            <p><strong>Description</strong></p>
-                            <p>Ghế bành với thiết kế hiện đại, đệm bọc vải cao cấp mềm mại, mang lại cảm giác êm ái khi sử dụng.
-                                Phần chân ghế bằng gỗ tự nhiên chắc chắn, kết hợp với kiểu dáng tinh tế, phù hợp cho phòng khách,
-                                phòng đọc sách hoặc không gian làm việc.
-                            </p>
+                            <p><strong>Description:</strong></p>
+                            <p th:text="${caption}">Đây là caption mô tả sản phẩm...</p>
                         </div>
-                        <div class="advise-block">
-                            <p><strong>Advise:</strong> Kết hợp ghế bành này với một chiếc bàn cà phê tối giản và thảm lông mềm để tạo không gian thư giãn ấm cúng. Đặt ghế gần cửa sổ để tận dụng ánh sáng tự nhiên, tăng cảm giác thoải mái khi đọc sách hoặc nghỉ ngơi.</p>
+                        <div class="advise-block mt-3">
+                            <p><strong>Advise:</strong></p>
+                            <p th:text="${answer}">Đây là nội dung tư vấn từ AI...</p>
                         </div>
                     </div>
                 </div>
@@ -139,6 +138,7 @@
         </div>
     </div>
 </div>
+
 <!-- End Fashion Upload Section -->
 
 <!-- Start Footer Section -->
