@@ -62,7 +62,6 @@
     </div>
   </div>
 
-
   <div class="main-panel">
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-absolute fixed-top navbar-transparent">
@@ -119,13 +118,12 @@
                 <input type="hidden" name="_csrf" value="${_csrf.token}"/>
               </form>
               <a class="nav-link btn-rotate" href="#" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
-                <i class="nc-icon nc-button-power"></i> <!-- icon nút nguồn / logout -->
+                <i class="nc-icon nc-button-power"></i>
                 <p>
                   <span class="d-lg-none d-md-block">Logout</span>
                 </p>
               </a>
             </li>
-
           </ul>
         </div>
       </div>
@@ -137,7 +135,7 @@
         <div class="col-md-12">
           <div class="card">
             <div class="card-header">
-              <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createProductModal">
+              <button type="button" class="btn btn-primary create-product" data-toggle="modal" data-target="#createProductModal">
                 <i class="fa fa-plus"></i> Tạo sản phẩm mới
               </button>
             </div>
@@ -157,16 +155,14 @@
                   </thead>
                   <tbody>
                   <tr th:each="product : ${products}">
-                    <td th:text="${product.name}">Sản phẩm A</td>
-                    <td th:text="${product.categoryName}">Quần áo nam</td>
+                    <td th:text="${product.name}"></td>
+                    <td th:text="${product.categoryName}"></td>
                     <td th:text="${product.price}">$45.00</td>
-                    <td th:text="${#dates.format(product.date, 'yyyy-MM-dd')}">2025-04-10</td>
-                    <td th:text="${product.status}">Đang bán</td>
+                    <td th:text="${#dates.format(product.date, 'yyyy-MM-dd')}"></td>
+                    <td th:text="${product.status}"></td>
                     <td class="text-right">
-                      <a th:href="@{'/admin/product/edit/' + ${product.id}}" title="Sửa"><i
-                              class="fa fa-pencil text-warning mr-2"></i></a>
-                      <a th:href="@{'/admin/product/delete/' + ${product.id}}" title="Xóa"><i
-                              class="fa fa-trash text-danger"></i></a>
+                      <a href="#" class="edit-product" th:data-id="${product.id}" title="Sửa" data-toggle="modal" data-target="#editProductModal"><i class="fa fa-pencil text-warning mr-2"></i></a>
+                      <a th:href="@{'/admin/product/delete/' + ${product.id}}" title="Xóa"><i class="fa fa-trash text-danger"></i></a>
                     </td>
                   </tr>
                   </tbody>
@@ -175,52 +171,21 @@
             </div>
 
             <!-- Modal tạo sản phẩm mới -->
-            <div class="modal fade" id="createProductModal" tabindex="-1" role="dialog"
-                 aria-labelledby="createProductModalLabel" aria-hidden="true">
+            <div class="modal fade" id="createProductModal" tabindex="-1" role="dialog" aria-labelledby="createProductModalLabel" aria-hidden="true">
               <div class="modal-dialog" role="document">
-                <form th:action="@{/admin/product/save}" method="post" class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="createProductModalLabel">Tạo sản phẩm mới</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
-                      <span aria-hidden="true">&times;</span>
-                    </button>
-                  </div>
-                  <div class="modal-body">
-                    <div class="form-group">
-                      <label for="productName">Tên sản phẩm</label>
-                      <input type="text" class="form-control" id="productName" name="name" placeholder="Nhập tên sản phẩm"
-                             required>
-                    </div>
-                    <div class="form-group">
-                      <label for="productCategory">Danh mục</label>
-                      <select class="form-control" id="productCategory" name="categoryId" required>
-                        <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}">
-                          Danh mục A
-                        </option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label for="productPrice">Giá</label>
-                      <input type="number" class="form-control" id="productPrice" name="price" min="0" step="0.01"
-                             placeholder="Nhập giá" required>
-                    </div>
-                    <div class="form-group">
-                      <label for="productStatus">Trạng thái</label>
-                      <select class="form-control" id="productStatus" name="status" required>
-                        <option value="AVAILABLE">Đang bán</option>
-                        <option value="UNAVAILABLE">Ngừng bán</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label for="productDate">Ngày</label>
-                      <input type="date" class="form-control" id="productDate" name="date" required>
-                    </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Lưu</button>
-                  </div>
-                </form>
+                <div class="modal-content" id="createProductModalContent">
+                  <!-- Nội dung modal sẽ được load động qua AJAX -->
+                </div>
+              </div>
+            </div>
+            <!-- End Modal -->
+
+            <!-- Modal chỉnh sửa sản phẩm -->
+            <div class="modal fade" id="editProductModal" tabindex="-1" role="dialog" aria-labelledby="editProductModalLabel" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content" id="editProductModalContent">
+                  <!-- Nội dung modal sẽ được load động qua AJAX -->
+                </div>
               </div>
             </div>
             <!-- End Modal -->
@@ -229,7 +194,7 @@
       </div>
     </div>
 
-    <footer class="footer footer-black  footer-white ">
+    <footer class="footer footer-black footer-white">
       <div class="container-fluid">
         <div class="row">
           <nav class="footer-nav">
@@ -240,9 +205,9 @@
             </ul>
           </nav>
           <div class="credits ml-auto">
-              <span class="copyright">
-                © <script>document.write(new Date().getFullYear())</script>, made with <i class="fa fa-heart heart"></i> by Creative Tim
-              </span>
+            <span class="copyright">
+              © <script>document.write(new Date().getFullYear())</script>, made with <i class="fa fa-heart heart"></i> by Creative Tim
+            </span>
           </div>
         </div>
       </div>
@@ -259,6 +224,42 @@
 <script th:src="@{/admin/js/plugins/bootstrap-notify.js}"></script>
 <script th:src="@{/admin/js/paper-dashboard.min.js?v=2.0.1}"></script>
 <script th:src="@{/admin/demo/demo.js}"></script>
+<script>
+  $(document).ready(function() {
+    // Load form tạo sản phẩm mới
+    $('.create-product').click(function() {
+      $.ajax({
+        url: '/admin/product/new',
+        type: 'GET',
+        success: function(data) {
+          $('#createProductModalContent').html(data);
+          $('#createProductModal').modal('show');
+        },
+        error: function(xhr, status, error) {
+          console.error('Lỗi:', xhr.status, error);
+          alert('Không thể tải form tạo sản phẩm.');
+        }
+      });
+    });
+
+    // Load form chỉnh sửa sản phẩm
+    $('.edit-product').click(function() {
+      var productId = $(this).data('id');
+      $.ajax({
+        url: '/admin/product/edit/' + productId,
+        type: 'GET',
+        success: function(data) {
+          $('#editProductModalContent').html(data);
+          $('#editProductModal').modal('show');
+        },
+        error: function(xhr, status, error) {
+          console.error('Lỗi:', xhr.status, error);
+          alert('Không thể tải dữ liệu sản phẩm.');
+        }
+      });
+    });
+  });
+</script>
 </body>
 
 </html>

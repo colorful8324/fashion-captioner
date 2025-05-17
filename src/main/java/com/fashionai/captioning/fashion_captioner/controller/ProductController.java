@@ -31,7 +31,9 @@ public class ProductController {
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("product", new Product());
-        return "admin/product-form";
+        model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute("isEdit", false);
+        return "admin/product-form :: productFormModal";
     }
 
     @PostMapping("/save")
@@ -45,13 +47,21 @@ public class ProductController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
-        productService.findById(id).ifPresent(p -> model.addAttribute("product", p));
-        return "admin/product-form";
+        Optional<Product> product = productService.findById(id);
+        if (product.isPresent()) {
+            model.addAttribute("product", product.get());
+            model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("isEdit", true);
+            return "admin/product-form :: productFormModal";
+        }
+        return "redirect:/admin/product";
     }
 
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, @ModelAttribute Product product) {
         product.setId(id);
+        Optional<Category> category = categoryService.findById(product.getCategoryId());
+        category.ifPresent(cat -> product.setCategoryName(cat.getName()));
         productService.save(product);
         return "redirect:/admin/product";
     }

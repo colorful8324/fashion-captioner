@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="productFormModal" class="modal-content">
+    <form th:action="${isEdit} ? @{/admin/product/{id}(id=${product.id})} : @{/admin/product/save}" method="post">
+        <div class="modal-header">
+            <h5 class="modal-title" th:text="${isEdit} ? 'Chỉnh sửa sản phẩm' : 'Tạo sản phẩm mới'"></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                <span aria-hidden="true">×</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" name="id" th:if="${isEdit}" th:value="${product.id}" />
+            <div class="form-group">
+                <label for="productName">Tên sản phẩm</label>
+                <input type="text" class="form-control" id="productName" name="name" th:value="${product.name}" placeholder="Nhập tên sản phẩm" required>
+            </div>
+            <div class="form-group">
+                <label for="productCategory">Danh mục</label>
+                <select class="form-control" id="productCategory" name="categoryId" required>
+                    <option th:each="category : ${categories}" th:value="${category.id}" th:selected="${category.id == product.categoryId}" th:text="${category.name}"></option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="productPrice">Giá</label>
+                <input type="number" class="form-control" id="productPrice" name="price" min="0" step="0.01" th:value="${product.price}" placeholder="Nhập giá" required>
+            </div>
+            <div class="form-group">
+                <label for="productStatus">Trạng thái</label>
+                <select class="form-control" id="productStatus" name="status" required>
+                    <option value="AVAILABLE" th:selected="${product.status == 'AVAILABLE'}">Đang bán</option>
+                    <option value="UNAVAILABLE" th:selected="${product.status == 'UNAVAILABLE'}">Ngừng bán</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="productDate">Ngày</label>
+                <input type="date" class="form-control" id="productDate" name="date" th:value="${#dates.format(product.date, 'yyyy-MM-dd')}" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+            <button type="submit" class="btn btn-primary">Lưu</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

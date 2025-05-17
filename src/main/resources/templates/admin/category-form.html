@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="categoryFormModal" class="modal-content">
+    <form th:action="${isEdit} ? @{/admin/category/{id}(id=${category.id})} : @{/admin/category/save}" method="post">
+        <div class="modal-header">
+            <h5 class="modal-title" th:text="${isEdit} ? 'Chỉnh sửa danh mục' : 'Tạo danh mục mới'"></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                <span aria-hidden="true">×</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" name="id" th:if="${isEdit}" th:value="${category.id}" />
+
+            <div class="form-group">
+                <label for="categoryName">Tên danh mục</label>
+                <input type="text" class="form-control" id="categoryName" name="name"
+                       th:value="${category.name}" placeholder="Nhập tên danh mục" required>
+            </div>
+
+            <div class="form-group">
+                <label for="categoryDescription">Mô tả</label>
+                <textarea class="form-control" id="categoryDescription" name="description"
+                          placeholder="Nhập mô tả danh mục"
+                          th:text="${category.description}"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="categoryStatus">Trạng thái</label>
+                <select class="form-control" id="categoryStatus" name="status" required>
+                    <option value="DISPLAY" th:selected="${category.status == 'DISPLAY'}">Hiển thị</option>
+                    <option value="HIDDEN" th:selected="${category.status == 'HIDDEN'}">Ẩn</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+            <button type="submit" class="btn btn-primary">Lưu</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

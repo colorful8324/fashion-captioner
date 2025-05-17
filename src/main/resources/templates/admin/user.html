@@ -22,17 +22,9 @@
 <div class="wrapper ">
   <div class="sidebar" data-color="white" data-active-color="danger">
     <div class="logo">
-      <a href="https://www.creative-tim.com" class="simple-text logo-mini">
-        <!-- <div class="logo-image-small">
-          <img th:src="@{/admin/img/logo-small.png}" alt="Logo Small" />
-        </div> -->
-        <!-- <p>CT</p> -->
-      </a>
+      <a href="https://www.creative-tim.com" class="simple-text logo-mini"></a>
       <a href="https://www.creative-tim.com" class="simple-text logo-normal">
         Funi Dashboard
-        <!-- <div class="logo-image-big">
-          <img th:src="@{/admin/img/logo-big.png}" alt="Logo Big" />
-        </div> -->
       </a>
     </div>
     <div class="sidebar-wrapper">
@@ -130,11 +122,10 @@
         <div class="col-md-12">
           <div class="card">
             <div class="card-header">
-              <button class="btn btn-primary">
+              <button type="button" class="btn btn-primary create-user" data-toggle="modal" data-target="#createUserModal">
                 <i class="fa fa-plus"></i> Tạo người dùng mới
               </button>
             </div>
-
             <div class="card-body">
               <div class="table-responsive">
                 <table class="table">
@@ -149,59 +140,20 @@
                   </tr>
                   </thead>
                   <tbody>
-                  <tr>
-                    <td>Nguyễn Văn A</td>
-                    <td>a.nguyen@example.com</td>
-                    <td>Admin</td>
-                    <td>Hoạt động</td>
-                    <td>2025-04-01</td>
+                  <tr th:each="user : ${users}">
+                    <td th:text="${user.name}"></td>
+                    <td th:text="${user.email}"></td>
+                    <td th:text="${user.role}"></td>
+                    <td th:text="${user.userStatus}"></td>
+                    <td th:text="${#dates.format(user.createdAt, 'yyyy-MM-dd')}"></td>
                     <td class="text-right">
-                      <i class="fa fa-pencil text-warning mr-2" title="Sửa"></i>
-                      <i class="fa fa-trash text-danger" title="Xóa"></i>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Trần Thị B</td>
-                    <td>b.tran@example.com</td>
-                    <td>Nhân viên</td>
-                    <td>Bị khóa</td>
-                    <td>2025-03-29</td>
-                    <td class="text-right">
-                      <i class="fa fa-pencil text-warning mr-2" title="Sửa"></i>
-                      <i class="fa fa-trash text-danger" title="Xóa"></i>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Lê Văn C</td>
-                    <td>c.le@example.com</td>
-                    <td>Khách hàng</td>
-                    <td>Hoạt động</td>
-                    <td>2025-04-10</td>
-                    <td class="text-right">
-                      <i class="fa fa-pencil text-warning mr-2" title="Sửa"></i>
-                      <i class="fa fa-trash text-danger" title="Xóa"></i>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Phạm Thị D</td>
-                    <td>d.pham@example.com</td>
-                    <td>Khách hàng</td>
-                    <td>Hoạt động</td>
-                    <td>2025-04-12</td>
-                    <td class="text-right">
-                      <i class="fa fa-pencil text-warning mr-2" title="Sửa"></i>
-                      <i class="fa fa-trash text-danger" title="Xóa"></i>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Đỗ Văn E</td>
-                    <td>e.do@example.com</td>
-                    <td>Nhân viên</td>
-                    <td>Bị khóa</td>
-                    <td>2025-04-03</td>
-                    <td class="text-right">
-                      <i class="fa fa-pencil text-warning mr-2" title="Sửa"></i>
-                      <i class="fa fa-trash text-danger" title="Xóa"></i>
+                      <a href="#" class="edit-user" th:data-id="${user.id}" title="Sửa" data-toggle="modal" data-target="#editUserModal">
+                        <i class="fa fa-pencil text-warning mr-2"></i>
+                      </a>
+                      <a th:href="@{'/admin/user/delete/' + ${user.id}}" title="Xóa"
+                         onclick="return confirm('Bạn có chắc chắn muốn xóa người dùng này?');">
+                        <i class="fa fa-trash text-danger"></i>
+                      </a>
                     </td>
                   </tr>
                   </tbody>
@@ -209,6 +161,23 @@
               </div>
             </div>
 
+            <!-- Modal tạo người dùng mới -->
+            <div class="modal fade" id="createUserModal" tabindex="-1" role="dialog" aria-labelledby="createUserModalLabel" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content" id="createUserModalContent">
+                  <!-- Nội dung form tạo user load AJAX vào đây -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal chỉnh sửa người dùng -->
+            <div class="modal fade" id="editUserModal" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content" id="editUserModalContent">
+                  <!-- Nội dung form sửa user load AJAX vào đây -->
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -220,16 +189,17 @@
           <nav class="footer-nav">
             <ul>
               <li><a href="https://www.creative-tim.com" target="_blank">Creative Tim</a></li>
-              <li><a href="https://www.creative-tim.com/blog" target="_blank">Blog</a></li>
-              <li><a href="https://www.creative-tim.com/license" target="_blank">Licenses</a></li>
+              <li><a href="https://www.creative-tim.com/presentation" target="_blank">About Us</a></li>
+              <li><a href="http://blog.creative-tim.com" target="_blank">Blog</a></li>
             </ul>
           </nav>
           <div class="credits ml-auto">
-              <span class="copyright">
-                © <script>
-                  document.write(new Date().getFullYear())
-                </script>, made with <i class="fa fa-heart heart"></i> by Creative Tim
-              </span>
+            <span class="copyright">
+              ©
+              <script>
+                document.write(new Date().getFullYear())
+              </script>, made with <i class="fa fa-heart heart"></i> by Creative Tim
+            </span>
           </div>
         </div>
       </div>
@@ -242,22 +212,44 @@
 <script th:src="@{/admin/js/core/popper.min.js}"></script>
 <script th:src="@{/admin/js/core/bootstrap.min.js}"></script>
 <script th:src="@{/admin/js/plugins/perfect-scrollbar.jquery.min.js}"></script>
-
-<!-- Google Maps Plugin -->
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE"></script>
-
-<!-- Chart JS -->
-<script th:src="@{/admin/js/plugins/chartjs.min.js}"></script>
-
-<!-- Notifications Plugin -->
 <script th:src="@{/admin/js/plugins/bootstrap-notify.js}"></script>
+<script th:src="@{/admin/js/paper-dashboard.min.js?v=2.0.1}"></script>
 
-<!-- Control Center for Now Ui Dashboard -->
-<script th:src="@{/admin/js/paper-dashboard.min.js?v=2.0.1}" type="text/javascript"></script>
+<script>
+  $(document).ready(function() {
+    // Tạo user mới - load form AJAX
+    $('.create-user').click(function() {
+      $.ajax({
+        url: '/admin/user/new',
+        type: 'GET',
+        success: function(data) {
+          $('#createUserModalContent').html(data);
+          $('#createUserModal').modal('show');
+        },
+        error: function(xhr) {
+          alert('Không thể tải form tạo người dùng.');
+        }
+      });
+    });
 
-<!-- Paper Dashboard DEMO methods -->
-<script th:src="@{/admin/demo/demo.js}"></script>
+    // Sửa user - load form AJAX theo id
+    $('table').on('click', '.edit-user', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      $.ajax({
+        url: '/admin/user/edit/' + id,
+        type: 'GET',
+        success: function(data) {
+          $('#editUserModalContent').html(data);
+          $('#editUserModal').modal('show');
+        },
+        error: function(xhr) {
+          alert('Không thể tải dữ liệu người dùng.');
+        }
+      });
+    });
+  });
+</script>
 
 </body>
-
 </html>

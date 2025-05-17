@@ -1,45 +1,54 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <title>Quản lý người dùng</title>
-  <link th:href="@{/admin/css/bootstrap.min.css}" rel="stylesheet" />
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
 <body>
-<div class="container mt-5">
-  <h3 th:text="${user.id} == null ? 'Tạo người dùng mới' : 'Chỉnh sửa người dùng'"></h3>
-
-  <form th:action="@{/admin/users/save}" th:object="${user}" method="post">
-    <input type="hidden" th:field="*{id}" />
-
-    <div class="form-group">
-      <label for="name">Họ tên</label>
-      <input type="text" class="form-control" id="name" th:field="*{name}" required />
+<div th:fragment="userFormModal" class="modal-content">
+  <form th:action="${isEdit} ? @{/admin/user/{id}(id=${user.id})} : @{/admin/user/save}" method="post">
+    <div class="modal-header">
+      <h5 class="modal-title" th:text="${isEdit} ? 'Chỉnh sửa người dùng' : 'Tạo người dùng mới'"></h5>
+      <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+        <span aria-hidden="true">×</span>
+      </button>
     </div>
+    <div class="modal-body">
+      <input type="hidden" name="id" th:if="${isEdit}" th:value="${user.id}" />
 
-    <div class="form-group">
-      <label for="email">Email</label>
-      <input type="email" class="form-control" id="email" th:field="*{email}" required />
+      <div class="form-group">
+        <label for="userName">Tên người dùng</label>
+        <input type="text" class="form-control" id="userName" name="name" th:value="${user.name}" placeholder="Nhập tên người dùng" required />
+      </div>
+
+      <div class="form-group">
+        <label for="userEmail">Email</label>
+        <input type="email" class="form-control" id="userEmail" name="email" th:value="${user.email}" placeholder="Nhập email" required />
+      </div>
+
+      <div class="form-group">
+        <label for="userRole">Trạng thái</label>
+        <select class="form-control" id="userRole" name="role" required>
+          <option value="ADMIN" th:selected="${user.role == ADMIN}">ADMIN</option>
+          <option value="USER" th:selected="${user.role == USER}">USER</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="userStatus">Trạng thái</label>
+        <select class="form-control" id="userStatus" name="userStatus" required>
+          <option value="ACTIVE" th:selected="${user.userStatus == ACTIVE}">ACTIVE</option>
+          <option value="SUSPENDED" th:selected="${user.userStatus == SUSPENDED}">SUSPENDED</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="createdAt">Ngày tạo</label>
+        <input type="date" class="form-control" id="createdAt" name="createdAt"
+               th:value="${user.createdAt != null ? #dates.format(user.createdAt, 'yyyy-MM-dd') : ''}" required />
+
+      </div>
     </div>
-
-    <div class="form-group">
-      <label for="role">Vai trò</label>
-      <select class="form-control" id="role" th:field="*{role}">
-        <option value="Admin">Admin</option>
-        <option value="Khách hàng">Khách hàng</option>
-      </select>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+      <button type="submit" class="btn btn-primary">Lưu</button>
     </div>
-
-    <div class="form-group">
-      <label for="status">Trạng thái</label>
-      <select class="form-control" id="status" th:field="*{status}">
-        <option value="Hoạt động">Hoạt động</option>
-        <option value="Bị khóa">Bị khóa</option>
-      </select>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Lưu</button>
-    <a th:href="@{/admin/users}" class="btn btn-secondary">Hủy</a>
   </form>
 </div>
 </body>

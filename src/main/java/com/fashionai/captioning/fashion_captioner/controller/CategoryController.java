@@ -7,8 +7,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/admin/category")
@@ -26,7 +26,8 @@ public class CategoryController {
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("category", new Category());
-        return "admin/category-form";
+        model.addAttribute("isEdit", false);
+        return "admin/category-form :: categoryFormModal";
     }
 
     @PostMapping("/save")
@@ -38,13 +39,19 @@ public class CategoryController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model) {
-        categoryService.findById(id).ifPresent(c -> model.addAttribute("category", c));
-        return "admin/category";
+        Optional<Category> category = categoryService.findById(id);
+        if (category.isPresent()) {
+            model.addAttribute("category", category.get());
+            model.addAttribute("isEdit", true);
+            return "admin/category-form :: categoryFormModal";
+        }
+        return "redirect:/admin/category";
     }
 
     @PostMapping("/{id}")
     public String update(@PathVariable Long id, @ModelAttribute Category category) {
         category.setId(id);
+        categoryService.findById(id).ifPresent(existing -> category.setCreatedDate(existing.getCreatedDate()));
         categoryService.save(category);
         return "redirect:/admin/category";
     }
@@ -55,4 +62,3 @@ public class CategoryController {
         return "redirect:/admin/category";
     }
 }
-
