@@ -112,7 +112,7 @@
                 <li><a class="nav-link" th:href="@{/shop}">Shop</a></li>
                 <li><a class="nav-link" th:href="@{/about}">About us</a></li>
                 <li><a class="nav-link" th:href="@{/services}">Services</a></li>
-                <li class="nav-item active"><a class="nav-link" th:href="@{/caption}">Recommendation</a></li>
+                <li class="nav-item active"><a class="nav-link" th:href="@{/recomendation}">Recommendation</a></li>
                 <li><a class="nav-link" th:href="@{/contact}">Contact us</a></li>
             </ul>
             <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
@@ -148,22 +148,32 @@
                 <div id="fashionCarousel" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-inner">
                         <!-- First Item -->
-                        <div class="carousel-item active">
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img">
-                                </div>
-                                <div class="col-md-7 description-wrapper">
+                        <div class="container mt-5">
+                          <div class="carousel slide" id="captionCarousel" data-ride="carousel">
+                            <div class="carousel-inner">
+
+                              <div th:each="result, iterStat : ${results}"
+                                   th:classappend="${iterStat.index == 0} ? ' active' : ''"
+                                   class="carousel-item">
+
+                                <div class="row align-items-center">
+                                  <div class="col-md-5">
+                                    <img th:src="${result.url}" th:alt="${result.filename}" class="img-fluid custom-img" />
+                                  </div>
+                                  <div class="col-md-7 description-wrapper">
                                     <div class="description-block">
-                                        <p><strong>Description</strong></p>
-                                        <p>Ghế bành với thiết kế hiện đại, đệm bọc vải cao cấp mềm mại, mang lại cảm giác êm ái khi sử dụng.
-                                            Phần chân ghế bằng gỗ tự nhiên chắc chắn, kết hợp với kiểu dáng tinh tế, phù hợp cho phòng khách,
-                                            phòng đọc sách hoặc không gian làm việc.
-                                        </p>
+                                      <p><strong>Description</strong></p>
+                                      <p th:text="${result.caption}">Đang sinh caption...</p>
                                     </div>
+                                  </div>
                                 </div>
+
+                              </div>
+
                             </div>
+                          </div>
                         </div>
+
                         <!-- Second Item -->
                         <div class="carousel-item">
                             <div class="row align-items-center">

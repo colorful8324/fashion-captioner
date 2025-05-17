@@ -106,7 +106,7 @@
 		</div>
 
 		<!-- Upload Form -->
-		<form th:action="@{/recommendation/caption}" method="post" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
+		<form th:action="@{/images/gen-cap}" method="post" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
 			<input type="file" name="images" id="fashionUpload" accept="image/*" class="form-control d-none"
 				   multiple
 				   onchange="handleFileSelect(event)">
@@ -129,7 +129,7 @@
 			Select one fashion image and ask a question
 		</p>
 
-		<form th:action="@{/recommendation/advise}" method="post" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
+		<form th:action="@{/images/advise}" method="post" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
 			<!-- Upload Icon for Single Image -->
 			<div class="mb-3 d-flex justify-content-center">
 				<label for="singleUpload" class="rounded-circle shadow d-flex align-items-center justify-content-center"
@@ -169,7 +169,7 @@
 		</p>
 
 		<!-- Question Form -->
-		<form th:action="@{/recommendation/query}" method="post" class="d-flex flex-column align-items-center">
+		<form th:action="@{/query/advise}" method="post" class="d-flex flex-column align-items-center">
 			<div class="mb-3" style="width: 100%; max-width: 500px;">
 				<input type="text" name="question" class="form-control" placeholder="Enter your question..." required>
 			</div>

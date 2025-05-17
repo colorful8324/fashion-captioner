@@ -86,7 +86,7 @@
                 <li><a class="nav-link" th:href="@{/shop}">Shop</a></li>
                 <li><a class="nav-link" th:href="@{/about}">About us</a></li>
                 <li><a class="nav-link" th:href="@{/services}">Services</a></li>
-                <li class="nav-item active"><a class="nav-link" th:href="@{/caption}">Recommendation</a></li>
+                <li class="nav-item active"><a class="nav-link" th:href="@{/recommendation}">Recommendation</a></li>
                 <li><a class="nav-link" th:href="@{/contact}">Contact us</a></li>
             </ul>
             <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
@@ -119,31 +119,35 @@
         <div class="upload-form-wrapper" id="uploadForm">
             <div class="upload-form-content">
                 <div class="row align-items-center">
+                    <!-- IMAGE SLIDER -->
                     <div class="col-md-5">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img w-100">
+                        <div class="position-relative">
+                            <div th:if="${images != null and !images.isEmpty()}">
+                                <div class="my-slider">
+                                    <div th:each="img : ${images}">
+                                        <img th:src="${img.image_url}"
+                                             class="img-fluid w-100 custom-img"
+                                             alt="Image preview">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-6">
-                                <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img w-100">
-                            </div>
-                            <div class="col-6">
-                                <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img w-100">
-                            </div>
-                            <div class="col-6">
-                                <img th:src="@{/shop/images/product-1.png}" alt="Ghế bành hiện đại" class="img-fluid custom-img w-100">
+                            <div th:if="${images == null or images.isEmpty()}">
+                                <img src="/shop/images/placeholder.jpg"
+                                     class="img-fluid w-100 custom-img"
+                                     alt="No image available">
                             </div>
                         </div>
                     </div>
 
+                    <!-- QUESTION & ADVICE -->
                     <div class="col-md-7 description-wrapper">
                         <div class="description-block">
-                            <p><strong>Question</strong></p>
-                            <p>Sản phẩm này có phù hợp để tạo không gian thư giãn trong phòng khách hoặc phòng đọc sách không? Có gợi ý nào để phối hợp nội thất cho phù hợp với thiết kế của ghế không?</p>
-
+                            <p><strong>Question:</strong></p>
+                            <p th:text="${question}">Câu hỏi từ người dùng</p>
                         </div>
-                        <div class="advise-block">
-                            <p><strong>Advise:</strong> Ghế bành với kiểu dáng hiện đại này rất lý tưởng để tạo điểm nhấn cho không gian thư giãn. Bạn nên đặt ghế cạnh cửa sổ để tận dụng ánh sáng tự nhiên, kết hợp thêm một bàn cà phê nhỏ và thảm mềm để tăng tính thẩm mỹ và sự ấm cúng cho căn phòng.</p>
+                        <div class="advise-block mt-3">
+                            <p><strong>Advice:</strong></p>
+                            <p th:text="${answer}">Câu trả lời của AI</p>
                         </div>
                     </div>
                 </div>
@@ -151,6 +155,22 @@
         </div>
     </div>
 </div>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+document.addEventListener("DOMContentLoaded", function () {
+    const slider = tns({
+        container: '.my-slider',
+        items: 1,
+        slideBy: 'page',
+        autoplay: false,
+        controls: true,
+        nav: false,
+        mouseDrag: true
+    });
+});
+/*]]>*/
+</script>
 <!-- End Fashion Upload Section -->
 
 <!-- Start Footer Section -->

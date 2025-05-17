@@ -165,7 +165,7 @@ public class ShopController {
 
             model.addAttribute("results", displayResults);
             System.out.println("=== XỬ LÝ HOÀN TẤT ===");
-            return "shop/caption-result";
+            return "shop/caption";
         } catch (Exception e) {
             System.out.println("❌ LỖI TRONG QUÁ TRÌNH XỬ LÝ");
             e.printStackTrace();  // In ra lỗi chi tiết
@@ -183,17 +183,18 @@ public class ShopController {
                                           Model model) {
 
         if (images.isEmpty() || question.isEmpty()) {
-            model.addAttribute("error", "Vui lòng upload câu hỏi và ít nhất một ảnh.");
+            model.addAttribute("error", "Please upload a question and at least one image.");
             return "error";
         }
 
         try {
+            log.info("Processing question: {} and images: {}", question, images);
             Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
             for (MultipartFile image : images) {
                 String uniqueName = UUID.randomUUID() + "-" + image.getOriginalFilename();
                 uuidToFileMap.put(uniqueName, image);
             }
-
+            log.info("Calling caption server...");
             List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
             List<String> captions = extractCaptions(captionResults);
             Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
@@ -205,7 +206,7 @@ public class ShopController {
 
                 String caption = result.containsKey("caption") ?
                         ((List<String>) result.get("caption")).get(0) :
-                        "Lỗi khi sinh caption";
+                        "Error generating caption";
 
                 Image savedImage = imageRepository.save(new Image(storedFilename, fileUrl, caption));
                 searchRepository.save(new Search(savedImage.getRecordId(), question));
@@ -216,15 +217,15 @@ public class ShopController {
             Map<String, Object> responseBody = aiResponse.getBody();
 
             Advice savedAdvice = saveAdviceToDb(question, aiResponse);
-
-            model.addAttribute("question", question);
+            String caption = captions.get(0);
+            model.addAttribute("caption", caption);
             model.addAttribute("answer", responseBody.get("answer"));
         } catch (Exception e) {
-            System.out.println("❌ LỖI TRONG QUÁ TRÌNH XỬ LÝ");
-            model.addAttribute("error", "Đã xảy ra lỗi khi xử lý yêu cầu: " + e.getMessage());
+            log.info("Error occurred when processing request: {}", e.getMessage());
+            model.addAttribute("error", "Error occurred when processing request: " + e.getMessage());
         }
 
-        return "shop/advise-result";
+        return "shop/advise";
 
     }
 
@@ -242,6 +243,7 @@ public class ShopController {
     @PostMapping("/query/advise")
     public String getAdviceFromQuery(@RequestParam("question") String question, Model model) {
         try {
+            log.info("Processing question: {}", question);
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("question", question);
 
@@ -250,7 +252,7 @@ public class ShopController {
 
             HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
 
-            // Gọi Flask server
+            log.info("Calling advice server...");
             ResponseEntity<Map> response = restTemplate.exchange(
                     adviseFromQueryUrl,
                     HttpMethod.POST,
@@ -261,20 +263,21 @@ public class ShopController {
             Map<String, Object> responseBody = response.getBody();
 
             if (responseBody == null) {
-                model.addAttribute("error", "Không nhận được phản hồi từ server.");
-                return "shop/advise-result";
+                model.addAttribute("error", "LLM server didn't response.");
+                return "shop/query";
             }
+            log.info("Advice server responded: {}", responseBody);
 
             model.addAttribute("question", question);
             model.addAttribute("answer", responseBody.get("answer"));
             model.addAttribute("images", responseBody.get("images")); // là list image objects
-
+            log.info("Finished giving advices for question: {}", question);
         } catch (Exception e) {
-            log.error("Lỗi khi gọi API từ query/advise", e);
-            model.addAttribute("error", "Đã xảy ra lỗi khi xử lý yêu cầu: " + e.getMessage());
+            log.error("Error calling API from query/advise", e);
+            model.addAttribute("error", "Error occurred when processing request: " + e.getMessage());
         }
 
-        return "shop/advise-result";
+        return "shop/query";
     }
 
 
