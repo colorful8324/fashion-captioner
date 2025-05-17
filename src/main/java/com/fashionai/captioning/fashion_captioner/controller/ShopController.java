@@ -7,6 +7,7 @@ import com.fashionai.captioning.fashion_captioner.repository.mysql.AdviceReposit
 import com.fashionai.captioning.fashion_captioner.repository.mysql.ImageRepository;
 import com.fashionai.captioning.fashion_captioner.repository.mysql.SearchRepository;
 import com.fashionai.captioning.fashion_captioner.service.MinioService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -165,6 +166,7 @@ public class ShopController {
             }
 
             model.addAttribute("results", displayResults);
+            model.addAttribute("uploadedFiles", uploadedFiles);
             System.out.println("=== XỬ LÝ HOÀN TẤT ===");
             return "shop/caption";
         } catch (Exception e) {
@@ -284,13 +286,21 @@ public class ShopController {
     @PostMapping("/images/gen-cap/download")
     public ResponseEntity<byte[]> downloadCsv(@RequestParam("captions") String captionsJson,
                                               @RequestParam("files") String filesJson) throws Exception {
-        // Chuyển đổi JSON string thành List<Map<>> và Map<>
+        // Parse JSON strings into appropriate types
         ObjectMapper objectMapper = new ObjectMapper();
-        List<Map<String, Object>> results = objectMapper.readValue(captionsJson, List.class);
-        Map<String, String> uploadedFiles = objectMapper.readValue(filesJson, Map.class);
+        List<Map<String, String>> results = objectMapper.readValue(captionsJson, 
+            new TypeReference<List<Map<String, String>>>() {});
 
-        // Gọi các hàm xử lý CSV
-        byte[] csvBytes = buildCsvFromCaptions(results, uploadedFiles);
+        // Build CSV content
+        StringBuilder csv = new StringBuilder("Filename,URL,Caption\n");
+        for (Map<String, String> result : results) {
+            String filename = result.get("filename");  // This is already the original filename
+            String url = result.get("url");
+            String caption = result.get("caption").replaceAll("\"", "\"\"");
+            csv.append(String.format("\"%s\",\"%s\",\"%s\"\n", filename, url, caption));
+        }
+
+        byte[] csvBytes = csv.toString().getBytes(StandardCharsets.UTF_8);
         return buildDownloadCsvResponse(csvBytes);
     }
 
