@@ -112,7 +112,7 @@
                 <li><a class="nav-link" th:href="@{/shop}">Shop</a></li>
                 <li><a class="nav-link" th:href="@{/about}">About us</a></li>
                 <li><a class="nav-link" th:href="@{/services}">Services</a></li>
-                <li class="nav-item active"><a class="nav-link" th:href="@{/recomendation}">Recommendation</a></li>
+                <li class="nav-item active"><a class="nav-link" th:href="@{/recommendation}">Recommendation</a></li>
                 <li><a class="nav-link" th:href="@{/contact}">Contact us</a></li>
             </ul>
             <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
@@ -223,15 +223,16 @@
                         <button type="button" data-bs-target="#fashionCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
                     </div>
                 </div>
-                <!-- Nút Tải CSV -->
-                <form id="download-form" method="post" th:action="@{/images/gen-cap/download}">
-                    <input type="hidden" name="captions" id="captions-json">
-                    <input type="hidden" name="files" id="files-json">
-                    <div class="button-wrapper">
-                        <button type="submit" class="btn btn-light">Tải xuống CSV</button>
-                    </div>
-                </form>
-
+                <!-- Download CSV Button -->
+                <div class="text-center mt-4">
+                    <form id="download-form" method="post" th:action="@{/images/gen-cap/download}">
+                        <input type="hidden" name="captions" id="captions-json">
+                        <input type="hidden" name="files" id="files-json">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download me-2"></i>Download Captions CSV
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -293,14 +294,22 @@
 
 <!-- Scripts -->
 <script th:inline="javascript">
-    const captionResults = /*[[${results}]]*/ [];
-    const uploadedFiles = /*[[${uploadedFiles}]]*/ {};
+    document.addEventListener("DOMContentLoaded", function () {
+        const captionResults = /*[[${results}]]*/ [];
+        const uploadedFiles = /*[[${uploadedFiles}]]*/ {};
 
-    document.getElementById("download-form").addEventListener("submit", function (e) {
-        document.getElementById("captions-json").value = JSON.stringify(captionResults);
-        document.getElementById("files-json").value = JSON.stringify(uploadedFiles);
+        const form = document.getElementById("download-form");
+        if (form) {
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                document.getElementById("captions-json").value = JSON.stringify(captionResults);
+                document.getElementById("files-json").value = JSON.stringify(uploadedFiles);
+                form.submit();
+            });
+        }
     });
 </script>
+
 
 <script th:src="@{/shop/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/shop/js/tiny-slider.js}"></script>
