@@ -120,8 +120,12 @@
             <div class="upload-form-content">
                 <div class="row align-items-center">
                     <div class="col-md-5">
-                        <!-- Nếu bạn có ảnh thực tế, bạn có thể truyền thêm biến 'imageUrl' vào model -->
-                        <img th:src="@{/shop/images/product-1.png}" alt="Ảnh sản phẩm" class="img-fluid custom-img">
+                        <div class="image-container">
+                            <img th:if="${images != null}" th:src="${images}" alt="Uploaded fashion image" class="img-fluid custom-img">
+                            <div th:unless="${images != null}" class="no-image-message">
+                                No image available
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-7 description-wrapper">
                         <div class="description-block">

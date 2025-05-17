@@ -111,15 +111,15 @@ public class ShopController {
 
     @PostMapping("/images/gen-cap")
     public String generateCaptionsView(@RequestParam("images") List<MultipartFile> images, Model model) {
-        System.out.println("=== BẮT ĐẦU XỬ LÝ ===");
+        log.info("=== BẮT ĐẦU XỬ LÝ ===");
 
         if (images.size() > 100) {
             model.addAttribute("error", "Chỉ được phép upload tối đa 100 ảnh.");
             return "error";
         }
 
-        System.out.println("Số lượng ảnh nhận được: " + images.size());
-        images.forEach(img -> System.out.println("Ảnh: " + img.getOriginalFilename()));
+        log.info("Số lượng ảnh nhận được: {}", images.size());
+        images.forEach(img -> log.info("Ảnh: {}", img.getOriginalFilename()));
 
         try {
             Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
@@ -128,16 +128,16 @@ public class ShopController {
                 uuidToFileMap.put(uuidFilename, image);
             }
 
-            System.out.println("Tên file đã gắn UUID:");
-            uuidToFileMap.keySet().forEach(System.out::println);
+            log.info("Tên file đã gắn UUID:");
+            uuidToFileMap.keySet().forEach(key -> log.info(key));
 
             List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
-            System.out.println("Caption kết quả trả về:");
-            captionResults.forEach(result -> System.out.println(result));
+            log.info("Caption kết quả trả về:");
+            captionResults.forEach(result -> log.info("{}", result));
 
             Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
-            System.out.println("Mapping filename → stored filename (MinIO):");
-            uploadedFiles.forEach((k, v) -> System.out.println(k + " → " + v));
+            log.info("Mapping filename → stored filename (MinIO):");
+            uploadedFiles.forEach((k, v) -> log.info("{} → {}", k, v));
 
             List<Map<String, String>> displayResults = new ArrayList<>();
             for (Map<String, Object> result : captionResults) {
@@ -145,19 +145,19 @@ public class ShopController {
 
                 String storedFilename = uploadedFiles.get(originalFilename);
                 if (storedFilename == null) {
-                    System.out.println("⚠️ Không tìm thấy '" + originalFilename + "' trong uploadedFiles");
+                    log.info("⚠️ Không tìm thấy '{}' trong uploadedFiles", originalFilename);
                     continue; // bỏ qua nếu không khớp
                 }
 
                 String fileUrl = minioService.getObjectUrl(storedFilename);
-                System.out.println("URL của ảnh: " + fileUrl);
+                log.info("URL của ảnh: {}", fileUrl);
 
                 String caption = result.containsKey("caption") ?
                         ((List<String>) result.get("caption")).get(0) :
                         "Lỗi khi sinh caption";
 
                 imageRepository.save(new Image(storedFilename, fileUrl, caption));
-                System.out.println("Đã lưu ảnh vào DB: " + storedFilename);
+                log.info("Đã lưu ảnh vào DB: {}", storedFilename);
 
                 displayResults.add(Map.of(
                         "filename", originalFilename,
@@ -168,11 +168,10 @@ public class ShopController {
 
             model.addAttribute("results", displayResults);
             model.addAttribute("uploadedFiles", uploadedFiles);
-            System.out.println("=== XỬ LÝ HOÀN TẤT ===");
+            log.info("=== XỬ LÝ HOÀN TẤT ===");
             return "shop/caption";
         } catch (Exception e) {
-            System.out.println("❌ LỖI TRONG QUÁ TRÌNH XỬ LÝ");
-            e.printStackTrace();  // In ra lỗi chi tiết
+            log.error("❌ LỖI TRONG QUÁ TRÌNH XỬ LÝ", e);
             model.addAttribute("error", "Lỗi khi xử lý ảnh: " + e.getMessage());
             return "error";
         }
@@ -222,6 +221,10 @@ public class ShopController {
 
             Advice savedAdvice = saveAdviceToDb(question, aiResponse);
             String caption = captions.get(0);
+            
+            String firstImageUrl = minioService.getObjectUrl(uploadedFiles.get(captionResults.get(0).get("filename")));
+            
+            model.addAttribute("images", firstImageUrl);
             model.addAttribute("caption", caption);
             model.addAttribute("answer", responseBody.get("answer"));
         } catch (Exception e) {
