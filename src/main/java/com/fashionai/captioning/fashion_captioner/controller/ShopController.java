@@ -7,6 +7,7 @@ import com.fashionai.captioning.fashion_captioner.repository.mysql.AdviceReposit
 import com.fashionai.captioning.fashion_captioner.repository.mysql.ImageRepository;
 import com.fashionai.captioning.fashion_captioner.repository.mysql.SearchRepository;
 import com.fashionai.captioning.fashion_captioner.service.MinioService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -279,6 +280,20 @@ public class ShopController {
 
         return "shop/query";
     }
+
+    @PostMapping("/images/gen-cap/download")
+    public ResponseEntity<byte[]> downloadCsv(@RequestParam("captions") String captionsJson,
+                                              @RequestParam("files") String filesJson) throws Exception {
+        // Chuyển đổi JSON string thành List<Map<>> và Map<>
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<Map<String, Object>> results = objectMapper.readValue(captionsJson, List.class);
+        Map<String, String> uploadedFiles = objectMapper.readValue(filesJson, Map.class);
+
+        // Gọi các hàm xử lý CSV
+        byte[] csvBytes = buildCsvFromCaptions(results, uploadedFiles);
+        return buildDownloadCsvResponse(csvBytes);
+    }
+
 
 
     private Map<String, String> uploadImagesToMinio(Map<String, MultipartFile> uuidToFileMap) throws Exception {

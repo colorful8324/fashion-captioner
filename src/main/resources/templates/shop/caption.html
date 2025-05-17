@@ -223,6 +223,15 @@
                         <button type="button" data-bs-target="#fashionCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
                     </div>
                 </div>
+                <!-- Nút Tải CSV -->
+                <form id="download-form" method="post" th:action="@{/images/gen-cap/download}">
+                    <input type="hidden" name="captions" id="captions-json">
+                    <input type="hidden" name="files" id="files-json">
+                    <div class="button-wrapper">
+                        <button type="submit" class="btn btn-light">Tải xuống CSV</button>
+                    </div>
+                </form>
+
             </div>
         </div>
     </div>
@@ -283,6 +292,16 @@
 <!-- End Footer Section -->
 
 <!-- Scripts -->
+<script th:inline="javascript">
+    const captionResults = /*[[${results}]]*/ [];
+    const uploadedFiles = /*[[${uploadedFiles}]]*/ {};
+
+    document.getElementById("download-form").addEventListener("submit", function (e) {
+        document.getElementById("captions-json").value = JSON.stringify(captionResults);
+        document.getElementById("files-json").value = JSON.stringify(uploadedFiles);
+    });
+</script>
+
 <script th:src="@{/shop/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/shop/js/tiny-slider.js}"></script>
 <script th:src="@{/shop/js/custom.js}"></script>
