@@ -102,6 +102,7 @@ public class ShopController {
         return "shop/advise";
     }
 
+
     @PostMapping("/recommendation/query")
     public String query() {
         return "shop/query";

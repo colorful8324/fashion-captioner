@@ -21,7 +21,7 @@
     <link th:href="@{https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css}" rel="stylesheet">
     <link th:href="@{/shop/css/tiny-slider.css}" rel="stylesheet">
     <link th:href="@{/shop/css/style.css}" rel="stylesheet">
-    <title>Furni</title>
+    <title>Cart - Furni</title>
 </head>
 
 <body>
@@ -49,8 +49,8 @@
             </ul>
 
             <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
-                <li><a class="nav-link" href="#"><img th:src="@{/shop/images/user.svg}"></a></li>
-                <li><a class="nav-link" href="cart.html"><img th:src="@{/shop/images/cart.svg}"></a></li>
+                <li><a class="nav-link" th:href="@{/logout}"><img th:src="@{/shop/images/user.svg}" alt="User Icon"></a></li>
+                <li><a class="nav-link" th:href="@{/cart}"><img th:src="@{/shop/images/cart.svg}"></a></li>
             </ul>
         </div>
     </div>
@@ -197,7 +197,7 @@
 
                         <div class="row">
                             <div class="col-md-12">
-                                <button class="btn btn-black btn-lg py-3 btn-block" onclick="window.location='checkout.html'">Proceed To Checkout</button>
+                                <button class="btn btn-black btn-lg py-3" onclick="window.location.href='/checkout'">Proceed To Checkout</button>
                             </div>
                         </div>
                     </div>
