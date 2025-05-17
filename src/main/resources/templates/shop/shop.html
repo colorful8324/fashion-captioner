@@ -72,7 +72,7 @@
 			<!-- Thymeleaf Loop Example: Replace with dynamic product list later -->
 			<div class="col-12 col-md-4 col-lg-3 mb-5" th:each="i : ${#numbers.sequence(1,8)}">
 				<a class="product-item" href="#">
-					<img th:src="@{/shop/images/product-__${i % 3 + 1}__.png}" class="img-fluid product-thumbnail" alt="Product Image">
+					<img th:src="@{/shop/images/couch_2.png}" class="img-fluid product-thumbnail" alt="Product Image">
 					<h3 class="product-title" th:text="${i % 3 == 1 ? 'Nordic Chair' : (i % 3 == 2 ? 'Kruzo Aero Chair' : 'Ergonomic Chair')}"></h3>
 					<strong class="product-price" th:text="${i % 3 == 2 ? '$78.00' : (i % 3 == 0 ? '$43.00' : '$50.00')}"></strong>
 
