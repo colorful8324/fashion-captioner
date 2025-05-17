@@ -153,7 +153,7 @@ public class ShopController {
                 log.info("URL của ảnh: {}", fileUrl);
 
                 String caption = result.containsKey("caption") ?
-                        ((List<String>) result.get("caption")).get(0) :
+                        (String) result.get("caption") :
                         "Lỗi khi sinh caption";
 
                 imageRepository.save(new Image(storedFilename, fileUrl, caption));
@@ -191,7 +191,7 @@ public class ShopController {
         }
 
         try {
-            log.info("Processing question: {} and images: {}", question, images);
+            log.info("Processing question: '{}' and images: '{}'", question, images.get(0).getOriginalFilename());
             Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
             for (MultipartFile image : images) {
                 String uniqueName = UUID.randomUUID() + "-" + image.getOriginalFilename();
@@ -208,7 +208,7 @@ public class ShopController {
                 String fileUrl = minioService.getObjectUrl(storedFilename);
 
                 String caption = result.containsKey("caption") ?
-                        ((List<String>) result.get("caption")).get(0) :
+                        (String) result.get("caption") :
                         "Error generating caption";
 
                 Image savedImage = imageRepository.save(new Image(storedFilename, fileUrl, caption));
@@ -250,7 +250,7 @@ public class ShopController {
     @PostMapping("/query/advise")
     public String getAdviceFromQuery(@RequestParam("question") String question, Model model) {
         try {
-            log.info("Processing question: {}", question);
+            log.info("Processing question: '{}'", question);
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("question", question);
 
@@ -349,8 +349,7 @@ public class ShopController {
         return captionResults.stream()
                 .map(result -> {
                     if (result.containsKey("caption")) {
-                        List<String> captions = (List<String>) result.get("caption");
-                        return captions.isEmpty() ? "" : captions.get(0);
+                        return (String) result.get("caption");
                     }
                     return "";
                 })

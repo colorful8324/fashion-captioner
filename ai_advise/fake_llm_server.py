@@ -3,8 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 import random
 
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:1234@localhost:3306/image_captioning'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:1234@db:3306/image_captioning'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:1234@localhost:3306/image_captioning'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:1234@db:3306/image_captioning'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking for performance
 db = SQLAlchemy(app)
 
