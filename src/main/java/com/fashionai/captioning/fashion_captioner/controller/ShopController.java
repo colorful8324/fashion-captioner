@@ -295,8 +295,11 @@ public class ShopController {
         List<Map<String, String>> results = objectMapper.readValue(captionsJson, 
             new TypeReference<List<Map<String, String>>>() {});
 
-        // Build CSV content
-        StringBuilder csv = new StringBuilder("Filename,URL,Caption\n");
+        // Build CSV content with UTF-8 BOM
+        StringBuilder csv = new StringBuilder();
+        csv.append('\ufeff'); // Add UTF-8 BOM
+        csv.append("Filename,URL,Caption\n");
+        
         for (Map<String, String> result : results) {
             String filename = result.get("filename");  // This is already the original filename
             String url = result.get("url");
@@ -399,7 +402,7 @@ public class ShopController {
     private ResponseEntity<byte[]> buildDownloadCsvResponse(byte[] csvBytes) {
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=captions.csv");
-        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentType(MediaType.parseMediaType("text/csv;charset=UTF-8"));
         headers.setContentLength(csvBytes.length);
         return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
     }

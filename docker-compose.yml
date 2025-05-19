@@ -19,7 +19,8 @@ services:
       AI_CAPTION_URL: http://ai_caption:8000/gen-cap
       AI_ADVISE_FROM_IMAGES_URL: http://ai_advise:5000/images/advise
       AI_ADVISE_FROM_QUERY_URL: http://ai_advise:5000/query/advise
-      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ENDPOINT: https://405d-27-73-113-136.ngrok-free.app
+      MINIO_EXTERNAL_ENDPOINT: https://405d-27-73-113-136.ngrok-free.app
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: fashion-captioner
@@ -45,16 +46,31 @@ services:
     image: minio/minio:latest
     restart: always
     environment:
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_SERVER_URL: "https://405d-27-73-113-136.ngrok-free.app"
+      MINIO_BROWSER_REDIRECT_URL: "https://405d-27-73-113-136.ngrok-free.app/minio"
     volumes:
       - minio_data:/data
       - ./init-bucket.sh:/docker-entrypoint-initdb.d/init-bucket.sh
-    ports:
-      - "9000:9000"
-    command: server /data
+    expose:
+      - "9000"
+      - "9001"
+    command: server /data --console-address ":9001"
     networks:
       - backend
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - minio
+    networks:
+      - backend
+    restart: always
 
   ai_caption:
     build:
@@ -83,3 +99,4 @@ volumes:
 networks:
   backend:
     driver: bridge
+

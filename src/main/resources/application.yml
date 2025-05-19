@@ -16,9 +16,9 @@ spring:
             max-request-size: 10MB
     mysql:
         datasource:
-            jdbc-url: jdbc:mysql://localhost:3306/image_captioning
-            username: root
-            password: 1234
+            jdbc-url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/image_captioning}
+            username: ${SPRING_DATASOURCE_USERNAME:root}
+            password: ${SPRING_DATASOURCE_PASSWORD:1234}
             driver-class-name: com.mysql.cj.jdbc.Driver
     h2:
         datasource:
@@ -36,7 +36,8 @@ ai:
     advise-from-query:
         url: http://127.0.0.1:5000/query/advise
 minio:
-    endpoint: http://localhost:9000
-    access-key: minioadmin
-    secret-key: minioadmin
-    bucket: fashion-captioner
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket: ${MINIO_BUCKET:fashion-captioner}
+    external-endpoint: ${MINIO_EXTERNAL_ENDPOINT:http://localhost:9000}

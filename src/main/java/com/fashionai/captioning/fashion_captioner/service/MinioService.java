@@ -4,21 +4,24 @@ import io.minio.*;
 import io.minio.errors.MinioException;
 import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MinioService {
 
     private final MinioClient minioClient;
+
     @Value("${minio.bucket}")
     private String bucket;
 
@@ -27,7 +30,7 @@ public class MinioService {
             PutObjectArgs.builder()
                 .bucket(bucket)
                 .object(filename)
-                .stream(stream, -1, 10485760) // -1 for unknown size, 10MB max part
+                .stream(stream, -1, 10485760)
                 .contentType(contentType)
                 .build()
         );
@@ -48,11 +51,6 @@ public class MinioService {
     }
 
     public String getObjectUrl(String objectName) throws Exception {
-
-        if (!objectExistsByName(objectName)) {
-            throw new Exception("Đối tượng không tồn tại trong MinIO: " + objectName);
-        }
-
         return minioClient.getPresignedObjectUrl(
             GetPresignedObjectUrlArgs.builder()
                 .method(Method.GET)
