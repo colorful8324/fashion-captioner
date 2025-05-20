@@ -106,9 +106,14 @@
               </div>
             </li>
             <li class="nav-item">
-              <a class="nav-link btn-rotate" href="javascript:;">
-                <i class="nc-icon nc-settings-gear-65"></i>
-                <p><span class="d-lg-none d-md-block">Account</span></p>
+              <form id="logoutForm" action="/logout" method="post" style="display: none;">
+                <input type="hidden" name="_csrf" value="${_csrf.token}"/>
+              </form>
+              <a class="nav-link btn-rotate" href="#" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
+                <i class="nc-icon nc-button-power"></i> <!-- icon nút nguồn / logout -->
+                <p>
+                  <span class="d-lg-none d-md-block">Logout</span>
+                </p>
               </a>
             </li>
           </ul>
@@ -183,22 +188,18 @@
       </div>
     </div>
 
-    <footer class="footer footer-black  footer-white ">
+    <footer class="footer footer-black footer-white">
       <div class="container-fluid">
         <div class="row">
           <nav class="footer-nav">
             <ul>
-              <li><a href="https://www.creative-tim.com" target="_blank">Creative Tim</a></li>
-              <li><a href="https://www.creative-tim.com/presentation" target="_blank">About Us</a></li>
-              <li><a href="http://blog.creative-tim.com" target="_blank">Blog</a></li>
+              <li><a href="#">Blog</a></li>
+              <li><a href="#">Licenses</a></li>
             </ul>
           </nav>
           <div class="credits ml-auto">
             <span class="copyright">
-              ©
-              <script>
-                document.write(new Date().getFullYear())
-              </script>, made with <i class="fa fa-heart heart"></i> by Creative Tim
+              © <script>document.write(new Date().getFullYear())</script>, made with <i class="fa fa-heart heart"></i>
             </span>
           </div>
         </div>

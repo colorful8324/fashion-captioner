@@ -311,15 +311,14 @@
         <div class="row">
           <nav class="footer-nav">
             <ul>
-              <li><a th:href="@{https://www.creative-tim.com}" target="_blank">Creative</a></li>
-              <li><a th:href="@{https://www.creative-tim.com/blog}" target="_blank">Blog</a></li>
-              <li><a th:href="@{https://www.creative-tim.com/license}" target="_blank">Licenses</a></li>
+              <li><a href="#">Blog</a></li>
+              <li><a href="#">Licenses</a></li>
             </ul>
           </nav>
           <div class="credits ml-auto">
-                            <span class="copyright">
-                                © <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2025</span>
-                            </span>
+            <span class="copyright">
+              © <script>document.write(new Date().getFullYear())</script>, made with <i class="fa fa-heart heart"></i>
+            </span>
           </div>
         </div>
       </div>
