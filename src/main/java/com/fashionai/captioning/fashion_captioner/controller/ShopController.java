@@ -2,10 +2,12 @@ package com.fashionai.captioning.fashion_captioner.controller;
 
 import com.fashionai.captioning.fashion_captioner.model.mysql.Advice;
 import com.fashionai.captioning.fashion_captioner.model.mysql.Image;
+import com.fashionai.captioning.fashion_captioner.model.mysql.LlmResponse;
 import com.fashionai.captioning.fashion_captioner.model.mysql.Search;
 import com.fashionai.captioning.fashion_captioner.repository.mysql.AdviceRepository;
 import com.fashionai.captioning.fashion_captioner.repository.mysql.ImageRepository;
 import com.fashionai.captioning.fashion_captioner.repository.mysql.SearchRepository;
+import com.fashionai.captioning.fashion_captioner.repository.mysql.LlmResponseRepository;
 import com.fashionai.captioning.fashion_captioner.service.MinioService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +38,7 @@ public class ShopController {
     private final ImageRepository imageRepository;
     private final AdviceRepository adviceRepository;
     private final SearchRepository searchRepository;
+    private final LlmResponseRepository llmResponseRepository;
     private final RestTemplate restTemplate;
     private final MinioService minioService;
 
@@ -185,27 +188,39 @@ public class ShopController {
                                           @RequestParam("question") String question,
                                           Model model) {
 
+        log.info("=== BẮT ĐẦU XỬ LÝ /images/advise ===");
+        log.info("Question received: '{}'", question);
+        log.info("Number of images received: {}", images.size());
+        images.forEach(img -> log.info("Image: {}", img.getOriginalFilename()));
+
         if (images.isEmpty() || question.isEmpty()) {
+            log.warn("Missing required parameters - images: {}, question: {}", images.isEmpty(), question.isEmpty());
             model.addAttribute("error", "Please upload a question and at least one image.");
             return "error";
         }
 
         try {
-            log.info("Processing question: '{}' and images: '{}'", question, images.get(0).getOriginalFilename());
             Map<String, MultipartFile> uuidToFileMap = new LinkedHashMap<>();
             for (MultipartFile image : images) {
                 String uniqueName = UUID.randomUUID() + "-" + image.getOriginalFilename();
                 uuidToFileMap.put(uniqueName, image);
+                log.info("Generated unique name for image: {} -> {}", image.getOriginalFilename(), uniqueName);
             }
+
             log.info("Calling caption server...");
             List<Map<String, Object>> captionResults = generateCaptionsFromServer(uuidToFileMap);
             List<String> captions = extractCaptions(captionResults);
+            log.info("Received {} captions from server", captions.size());
+            captions.forEach(caption -> log.info("Caption: {}", caption));
+
             Map<String, String> uploadedFiles = uploadImagesToMinio(uuidToFileMap);
+            log.info("Uploaded {} files to MinIO", uploadedFiles.size());
 
             for (Map<String, Object> result : captionResults) {
                 String originalFilename = (String) result.get("filename");
                 String storedFilename = uploadedFiles.get(originalFilename);
                 String fileUrl = minioService.getObjectUrl(storedFilename);
+                log.info("Processing image: {} -> {}", originalFilename, fileUrl);
 
                 String caption = result.containsKey("caption") ?
                         (String) result.get("caption") :
@@ -213,38 +228,63 @@ public class ShopController {
 
                 Image savedImage = imageRepository.save(new Image(storedFilename, fileUrl, caption));
                 searchRepository.save(new Search(savedImage.getRecordId(), question));
+                log.info("Saved image and search record to database - record_id: {}", savedImage.getRecordId());
             }
 
             Map<String, Object> advicePayload = Map.of("captions", captions, "question", question);
+            log.info("Calling advice server with payload: {}", advicePayload);
             ResponseEntity<Map> aiResponse = requestAdviceFromCaptions(advicePayload);
             Map<String, Object> responseBody = aiResponse.getBody();
+            log.info("Received response from advice server: {}", responseBody);
 
             Advice savedAdvice = saveAdviceToDb(question, aiResponse);
-            String caption = captions.get(0);
+            log.info("Saved advice to database - id: {}", savedAdvice.getId());
             
+            String caption = captions.get(0);
             String firstImageUrl = minioService.getObjectUrl(uploadedFiles.get(captionResults.get(0).get("filename")));
             
             model.addAttribute("images", firstImageUrl);
             model.addAttribute("caption", caption);
             model.addAttribute("answer", responseBody.get("answer"));
+            log.info("=== XỬ LÝ HOÀN TẤT /images/advise ===");
         } catch (Exception e) {
-            log.info("Error occurred when processing request: {}", e.getMessage());
+            log.error("❌ LỖI TRONG QUÁ TRÌNH XỬ LÝ /images/advise", e);
             model.addAttribute("error", "Error occurred when processing request: " + e.getMessage());
         }
 
         return "shop/advise";
-
     }
 
 
     private Advice saveAdviceToDb(String question, ResponseEntity<Map> aiResponse) {
         assert aiResponse.getBody() != null;
-        return adviceRepository.save(
-                new Advice(
-                        question,
-                        (String) aiResponse.getBody().get("answer")
-                )
-        );
+        String response = (String) aiResponse.getBody().get("answer");
+        
+        try {
+            // Save to llm_response table first with full response
+            llmResponseRepository.save(new LlmResponse(question, response));
+            
+            // Then save to advice table with truncated response (since it has a length limit)
+            return adviceRepository.save(
+                    new Advice(
+                            question,
+                            truncateResponse(response)
+                    )
+            );
+        } catch (Exception e) {
+            log.error("Error saving response to database: {}", e.getMessage());
+            // Return the advice object even if saving to llm_response fails
+            return new Advice(question, truncateResponse(response));
+        }
+    }
+
+    private String truncateResponse(String text) {
+        final int MAX_LENGTH = 1000;
+        if (text == null || text.length() <= MAX_LENGTH) {
+            return text;
+        }
+        log.info("Truncating response from {} to {} characters", text.length(), MAX_LENGTH);
+        return text.substring(0, MAX_LENGTH - 3) + "...";
     }
 
     @PostMapping("/query/advise")

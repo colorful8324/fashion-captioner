@@ -46,7 +46,7 @@ CREATE TABLE response_use_search (
 CREATE TABLE llm_response (
     response_id INT PRIMARY KEY AUTO_INCREMENT,
     user_query TEXT,
-    response TEXT,
+    response LONGTEXT,
     created_at DATETIME
 );
 

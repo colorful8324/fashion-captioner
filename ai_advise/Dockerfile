@@ -4,7 +4,19 @@ FROM python:3.9-slim
 # Set working directory
 WORKDIR /app
 
-# Install dependencies
+# Install system dependencies with retry mechanism
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    || (apt-get update && \
+        apt-get install -y --no-install-recommends \
+        default-libmysqlclient-dev \
+        build-essential \
+        && rm -rf /var/lib/apt/lists/*)
+
+# Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -15,4 +27,4 @@ COPY . /app/
 EXPOSE 5000
 
 # Command to run the application
-CMD ["python", "fake_llm_server.py"]
+CMD ["uvicorn", "advise:app", "--host", "0.0.0.0", "--port", "5000"]
