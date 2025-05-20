@@ -1,0 +1,55 @@
+@startuml User_Features_Wide
+
+skinparam actorStyle awesome
+skinparam usecaseStyle roundbox
+skinparam usecase {
+  BackgroundColor #E3F2FD
+  BorderColor Black
+}
+skinparam rectangle {
+  BackgroundColor #F9F9F9
+  BorderColor DarkGray
+}
+
+left to right direction
+
+' Actors
+actor User as "User"
+
+rectangle "Fashion Captioner - User Features" {
+
+    package "Authentication" {
+        usecase "Login" as UC1
+        usecase "Register" as UC2
+    }
+
+    package "Shop Features" {
+        usecase "Browse Shop" as UC3
+        usecase "Checkout" as UC6
+    }
+
+    package "AI Features" {
+        usecase "Generate Image Captions" as UC7
+        usecase "Download Captions CSV" as UC10
+        usecase "Get Fashion Advice from Images" as UC8
+        usecase "Get Fashion Advice from Query" as UC9
+        usecase "Generate Images from Advice" as UC15
+    }
+}
+
+' Relationships - User
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC6
+User --> UC8
+User --> UC9
+User --> UC10
+User --> UC15
+
+' Dependencies
+UC7 ..> UC10 : <<extend>>
+UC8 ..> UC7 : <<include>>
+UC9 ..> UC15 : <<extend>>
+
+@enduml 

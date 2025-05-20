@@ -1,0 +1,46 @@
+@startuml Admin_Features_Wide
+
+skinparam actorStyle awesome
+skinparam usecaseStyle roundbox
+skinparam usecase {
+  BackgroundColor #FFF3E0
+  BorderColor Black
+}
+skinparam rectangle {
+  BackgroundColor #F9F9F9
+  BorderColor DarkGray
+}
+
+left to right direction
+
+' Actor
+actor Admin as "Admin"
+
+rectangle "Fashion Captioner - Admin Features" {
+
+    package "Authentication" {
+        usecase "Login" as UC1
+    }
+
+    package "Admin Operations" {
+        usecase "Manage Users" as UC11
+        usecase "Manage Categories" as UC12
+        usecase "Manage Products" as UC13
+        usecase "View Dashboard" as UC14
+    }
+}
+
+' Relationships
+Admin --> UC1
+Admin --> UC11
+Admin --> UC12
+Admin --> UC13
+Admin --> UC14
+
+' Include Login Requirement
+UC11 ..> UC1 : <<include>>
+UC12 ..> UC1 : <<include>>
+UC13 ..> UC1 : <<include>>
+UC14 ..> UC1 : <<include>>
+
+@enduml

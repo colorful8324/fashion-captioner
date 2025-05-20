@@ -1,0 +1,7 @@
+version: "2"
+authtoken: 2xJwpQTCw6I7I2zyG2vvQ772QcG_7nR1pv8WtgrDWxA1vj23x
+web_addr: 0.0.0.0:4040
+tunnels:
+  minio:
+    proto: http
+    addr: nginx:80

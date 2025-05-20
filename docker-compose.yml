@@ -19,8 +19,6 @@ services:
       AI_CAPTION_URL: http://ai_caption:8000/gen-cap
       AI_ADVISE_FROM_IMAGES_URL: http://ai_advise:5000/images/advise
       AI_ADVISE_FROM_QUERY_URL: http://ai_advise:5000/query/advise
-      MINIO_ENDPOINT: https://bf85-27-73-113-136.ngrok-free.app
-      MINIO_EXTERNAL_ENDPOINT: https://bf85-27-73-113-136.ngrok-free.app
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: fashion-captioner
@@ -48,8 +46,6 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_SERVER_URL: "https://bf85-27-73-113-136.ngrok-free.app"
-      MINIO_BROWSER_REDIRECT_URL: "https://bf85-27-73-113-136.ngrok-free.app/minio"
     volumes:
       - minio_data:/data
       - ./init-bucket.sh:/docker-entrypoint-initdb.d/init-bucket.sh
@@ -59,6 +55,28 @@ services:
     command: server /data --console-address ":9001"
     networks:
       - backend
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    command: http nginx:80 --log=stdout
+    environment:
+      - NGROK_AUTHTOKEN=2xJwpQTCw6I7I2zyG2vvQ772QcG_7nR1pv8WtgrDWxA1vj23x
+      - NGROK_CONFIG=/etc/ngrok.yml
+    volumes:
+      - ./ngrok.yml:/etc/ngrok.yml:ro
+    ports:
+      - "4040:4040"
+    depends_on:
+      - nginx
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4040/api/tunnels"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   nginx:
     image: nginx:latest

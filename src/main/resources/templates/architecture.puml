@@ -1,0 +1,44 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam dpi 150
+skinparam defaultTextAlignment center
+
+' Define services
+component [Ngrok] as ngrok
+component [Nginx] as nginx
+component [MinIO] as minio
+component [Spring Boot App] as app
+
+' Define dependencies
+ngrok --> nginx : routes traffic to\nport 80
+nginx --> minio : proxies requests to\nport 9000
+app --> minio : uses for storage\n(requires public URL)
+app --> ngrok : waits for public URL\nsets MINIO_ENDPOINT
+
+' Notes
+note right of ngrok
+  - Exposes public URL
+  - Depends on nginx
+end note
+
+note right of nginx
+  - Reverse proxy
+  - Routes to MinIO
+  - Depends on MinIO
+end note
+
+note right of minio
+  - Object storage
+  - Runs on port 9000
+  - Needs public URL
+end note
+
+note right of app
+  - Spring Boot application
+  - Needs MINIO_ENDPOINT
+  - Waits for Ngrok URL
+end note
+
+@enduml

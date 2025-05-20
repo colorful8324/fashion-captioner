@@ -16,7 +16,7 @@ public class LlmResponse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "response_id")
-    private Long responseId;
+    private Integer responseId;
 
     @Column(name = "user_query", nullable = false)
     private String userQuery;
