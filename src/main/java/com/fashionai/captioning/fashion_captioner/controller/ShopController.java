@@ -261,10 +261,8 @@ public class ShopController {
         String response = (String) aiResponse.getBody().get("answer");
         
         try {
-            // Save to llm_response table first with full response
             llmResponseRepository.save(new LlmResponse(question, response));
             
-            // Then save to advice table with truncated response (since it has a length limit)
             return adviceRepository.save(
                     new Advice(
                             question,
@@ -273,7 +271,6 @@ public class ShopController {
             );
         } catch (Exception e) {
             log.error("Error saving response to database: {}", e.getMessage());
-            // Return the advice object even if saving to llm_response fails
             return new Advice(question, truncateResponse(response));
         }
     }

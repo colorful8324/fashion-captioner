@@ -6,7 +6,6 @@ import io
 import requests
 from typing import List
 
-# Google Translate API configuration
 API_KEY = 'AIzaSyALJPAV59m1nBL8RyJ0dpYSyfwHnt9qqCw'
 TRANSLATE_URL = 'https://translation.googleapis.com/language/translate/v2'
 
@@ -24,7 +23,6 @@ def translate_text(text, target_language='vi', source_language='en'):
     result = response.json()
     return result['data']['translations'][0]['translatedText']
 
-# load the model and processor
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 processor = AutoProcessor.from_pretrained('kzap201/fashion_BLIP', revision='v1.0')
 model = BlipForConditionalGeneration.from_pretrained('kzap201/fashion_BLIP', revision='v1.0')
@@ -36,14 +34,11 @@ app = FastAPI()
 @app.post("/generate")
 async def generate_caption(file: UploadFile = File(...), max_tokens: int = 100):
     try:
-        # Read the image file
         contents = await file.read()
         image = Image.open(io.BytesIO(contents))
         
-        # Process image with the model
         inputs = processor(images=image, return_tensors="pt").to(device)
         
-        # Generate caption
         with torch.no_grad():
             outputs = model.generate(
                 **inputs, 
@@ -91,7 +86,6 @@ async def generate_captions(files: List[UploadFile] = File(...), max_tokens: int
                 )
                 english_captions = processor.batch_decode(outputs, skip_special_tokens=True)
                 
-                # Translate captions to Vietnamese
                 vietnamese_captions = []
                 for caption in english_captions:
                     vietnamese_caption = translate_text(caption)
