@@ -122,16 +122,16 @@
                     <!-- IMAGE SLIDER -->
                     <div class="col-md-5">
                         <div class="position-relative">
-                            <div th:if="${images != null and !images.isEmpty()}">
+                            <div th:if="${image_urls != null and !image_urls.isEmpty()}">
                                 <div class="my-slider">
-                                    <div th:each="img : ${images}">
-                                        <img th:src="${img.image_url}"
+                                    <div th:each="imgUrl : ${image_urls}">
+                                        <img th:src="${imgUrl}"
                                              class="img-fluid w-100 custom-img"
-                                             alt="Image preview">
+                                             alt="Fashion suggestion">
                                     </div>
                                 </div>
                             </div>
-                            <div th:if="${images == null or images.isEmpty()}">
+                            <div th:if="${image_urls == null or image_urls.isEmpty()}">
                                 <img src="/shop/images/placeholder.jpg"
                                      class="img-fluid w-100 custom-img"
                                      alt="No image available">

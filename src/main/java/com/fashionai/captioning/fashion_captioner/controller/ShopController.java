@@ -314,7 +314,7 @@ public class ShopController {
 
             model.addAttribute("question", question);
             model.addAttribute("answer", responseBody.get("answer"));
-            model.addAttribute("images", responseBody.get("images")); // là list image objects
+            model.addAttribute("image_urls", responseBody.get("image_urls"));
             log.info("Finished giving advices for question: {}", question);
         } catch (Exception e) {
             log.error("Error calling API from query/advise", e);
@@ -327,18 +327,16 @@ public class ShopController {
     @PostMapping("/images/gen-cap/download")
     public ResponseEntity<byte[]> downloadCsv(@RequestParam("captions") String captionsJson,
                                               @RequestParam("files") String filesJson) throws Exception {
-        // Parse JSON strings into appropriate types
         ObjectMapper objectMapper = new ObjectMapper();
         List<Map<String, String>> results = objectMapper.readValue(captionsJson, 
             new TypeReference<List<Map<String, String>>>() {});
 
-        // Build CSV content with UTF-8 BOM
         StringBuilder csv = new StringBuilder();
-        csv.append('\ufeff'); // Add UTF-8 BOM
+        csv.append('\ufeff');
         csv.append("Filename,URL,Caption\n");
         
         for (Map<String, String> result : results) {
-            String filename = result.get("filename");  // This is already the original filename
+            String filename = result.get("filename");
             String url = result.get("url");
             String caption = result.get("caption").replaceAll("\"", "\"\"");
             csv.append(String.format("\"%s\",\"%s\",\"%s\"\n", filename, url, caption));

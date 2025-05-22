@@ -1,0 +1,63 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam dpi 150
+skinparam defaultTextAlignment center
+left to right direction
+
+component [Ngrok] as ngrok
+component [MinIO] as minio
+component [Spring Boot App] as app
+component [MySQL DB] as db
+component [AI Caption Service] as ai_caption
+component [AI Advise Service] as ai_advise
+
+ngrok --> minio : routes traffic directly to\nport 9000
+app --> minio : uses for storage\n(requires public URL)
+app --> ngrok : waits for public URL\nsets MINIO_ENDPOINT
+app --> db : reads/writes\nimage metadata
+app --> ai_caption : calls for\nimage captioning
+app --> ai_advise : calls for\nfashion advice
+ai_caption --> minio : fetches/saves images
+ai_advise --> minio : fetches/saves images
+
+note bottom of ngrok
+  - Exposes public URL
+  - Tunnels to MinIO
+  - Depends on MinIO
+end note
+
+note bottom of minio
+  - Object storage
+  - Runs on port 9000
+  - Exposed via ngrok
+  - Needs public URL
+end note
+
+note bottom of app
+  - Spring Boot application
+  - Needs MINIO_ENDPOINT
+  - Waits for Ngrok URL
+  - Orchestrates AI services
+  - Stores metadata in DB
+end note
+
+note bottom of db
+  - MySQL database
+  - Stores image metadata, captions data, etc.
+end note
+
+note bottom of ai_caption
+  - Python service
+  - Generates captions for images
+  - May use MinIO for image data
+end note
+
+note bottom of ai_advise
+  - Python service
+  - Provides fashion advice
+  - May use MinIO for image data
+end note
+
+@enduml

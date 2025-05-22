@@ -20,12 +20,11 @@ rectangle "Fashion Captioner - User Features" {
 
     package "Authentication" {
         usecase "Login" as UC1
-        usecase "Register" as UC2
+        usecase "Logout" as UC2
     }
 
     package "Shop Features" {
         usecase "Browse Shop" as UC3
-        usecase "Checkout" as UC6
     }
 
     package "AI Features" {
@@ -41,7 +40,6 @@ rectangle "Fashion Captioner - User Features" {
 User --> UC1
 User --> UC2
 User --> UC3
-User --> UC6
 User --> UC8
 User --> UC9
 User --> UC10

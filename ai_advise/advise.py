@@ -4,6 +4,7 @@ import random
 import time
 import logging
 from typing import List
+from duckduckgo_search.exceptions import RatelimitException
 
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
@@ -14,6 +15,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from duckduckgo_search import DDGS
 
 # Configure logging
 logging.basicConfig(
@@ -26,6 +28,7 @@ app = FastAPI()
 
 # Database setup
 SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:1234@db:3306/image_captioning"
+# SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:1234@localhost:3306/image_captioning"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -74,6 +77,10 @@ class ImageAdviceRequest(BaseModel):
 class QueryRequest(BaseModel):
     question: str
 
+class FashionAdvice(BaseModel):
+    clothes: list[str]
+    how_to_fit_it: str
+
 @app.post("/images/advise")
 async def _get_image_advice(request: ImageAdviceRequest):
     logger.info(f"Received request for /images/advise with question: {request.question}")
@@ -111,34 +118,72 @@ async def _get_image_advice(request: ImageAdviceRequest):
 
 @app.post("/query/advise")
 async def _get_query_advice(request: QueryRequest):
-    prompt = f"""
-        You are a fashion assistant. Your task is to give users advice based on their question.
-        The clothes field is a list of description of the clothes without any comment of yours. For example: 
-        "white t-shirt with printed graphics."
-        The how_to_fit_it field should be in Vietnamese and the clothes field should also be in Vietnamese.
+    logger.info(f"Received request for /query/advise with question: {request.question}")
+    
+    try:
+        prompt = f"""
+            You are a fashion assistant. Your task is to give users advice based on their question.
+            The clothes field is a list of description of the clothes without any comment of yours. For example:
+            "white t-shirt with printed graphics."
+            The how_to_fit_it field should be in Vietnamese and the clothes field should be in English.
+            The clothes list should contain at maximum 4 items.
+            User's question: {request.question}
+            """
+        logger.info("Generated prompt for LLM")
+        
+        llm = genai.Client(api_key="AIzaSyC0SFy8iUZycmWXbUtTA6IEgof2O1PS5jc")
+        llm_response = llm.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": FashionAdvice
+            }
+        )
+        logger.info("Successfully received response from LLM")
 
-        User's question: {request.question}
-        """
-    llm = genai.Client(api_key="AIzaSyC0SFy8iUZycmWXbUtTA6IEgof2O1PS5jc")
-    llm_response = llm.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt
-    )
+        advice: FashionAdvice = llm_response.parsed
+        logger.info(f"Parsed advice with {len(advice.clothes)} clothing items")
 
-    # Get random images from database
-    db = next(get_db())
-    all_images = db.query(Image).all()
-    selected_images = random.sample(all_images, min(len(all_images), 2))
+        # Initialize empty list for image URLs
+        image_urls = []
+        
+        # Try to get images with retry logic
+        for clothing_item in advice.clothes:
+            max_retries = 3
+            retry_delay = 2  # seconds
+            
+            for attempt in range(max_retries):
+                try:
+                    logger.info(f"Searching for image: {clothing_item}")
+                    ddg = DDGS()
+                    results = ddg.images(keywords=clothing_item)
+                    if results and len(results) > 0:
+                        image_urls.append(results[0]["image"])
+                        logger.info(f"Found image URL for: {clothing_item}")
+                        break
+                except RatelimitException as e:
+                    logger.warning(f"Rate limit hit for {clothing_item}, attempt {attempt + 1}/{max_retries}")
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                    else:
+                        logger.error(f"Failed to get image for {clothing_item} after {max_retries} attempts")
+                        # Add a placeholder or default image URL
+                        image_urls.append("https://via.placeholder.com/300x400?text=Image+Not+Available")
+                except Exception as e:
+                    logger.error(f"Error getting image for {clothing_item}: {str(e)}")
+                    image_urls.append("https://via.placeholder.com/300x400?text=Image+Not+Available")
+                    break
 
-    image_results = [
-        {
-            "record_id": img.record_id,
-            "image_url": img.image_url
-        }
-        for img in selected_images
-    ]
-
-    return JSONResponse({
-        "answer": llm_response.text,
-        "images": image_results
-    })
+        logger.info(f"Successfully processed request with {len(image_urls)} images")
+        return JSONResponse({
+            "image_urls": image_urls,
+            "answer": advice.how_to_fit_it
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in /query/advise: {str(e)}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Error generating advice: {str(e)}"}
+        )

@@ -12,6 +12,10 @@ while [ -z "$NGROK_URL" ]; do
   [ -z "$NGROK_URL" ] && echo "ngrok tunnel not ready yet, retrying..." && sleep 2
 done
 
+# Set MinIO environment variables
+export MINIO_SERVER_URL="$NGROK_URL"
+export MINIO_BROWSER_REDIRECT_URL="$NGROK_URL"
 export MINIO_ENDPOINT="$NGROK_URL"
+
 echo "Starting Spring Boot app with MINIO_ENDPOINT=$MINIO_ENDPOINT"
 java -jar /app/fashion-captioner.jar

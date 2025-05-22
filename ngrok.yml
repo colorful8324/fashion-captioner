@@ -4,4 +4,4 @@ web_addr: 0.0.0.0:4040
 tunnels:
   minio:
     proto: http
-    addr: nginx:80
+    addr: minio:9000
