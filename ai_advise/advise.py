@@ -145,13 +145,11 @@ async def _get_query_advice(request: QueryRequest):
         advice: FashionAdvice = llm_response.parsed
         logger.info(f"Parsed advice with {len(advice.clothes)} clothing items")
 
-        # Initialize empty list for image URLs
         image_urls = []
         
-        # Try to get images with retry logic
         for clothing_item in advice.clothes:
             max_retries = 3
-            retry_delay = 2  # seconds
+            retry_delay = 2
             
             for attempt in range(max_retries):
                 try:
@@ -168,7 +166,6 @@ async def _get_query_advice(request: QueryRequest):
                         time.sleep(retry_delay)
                     else:
                         logger.error(f"Failed to get image for {clothing_item} after {max_retries} attempts")
-                        # Add a placeholder or default image URL
                         image_urls.append("https://via.placeholder.com/300x400?text=Image+Not+Available")
                 except Exception as e:
                     logger.error(f"Error getting image for {clothing_item}: {str(e)}")

@@ -2,14 +2,14 @@ spring:
     application:
         name: fashion-captioner
     thymeleaf:
-        cache: false # Tắt cache Thymeleaf để reload template khi chỉnh sửa
-        prefix: classpath:/templates/ # Đường dẫn đến thư mục templates
-        suffix: .html # Đuôi file template
+        cache: false
+        prefix: classpath:/templates/
+        suffix: .html
     web:
         resources:
-            static-locations: classpath:/static/ # Đường dẫn đến thư mục static
+            static-locations: classpath:/static/
     mvc:
-        static-path-pattern: /** # Đảm bảo tất cả đường dẫn tĩnh được phục vụ
+        static-path-pattern: /**
     servlet:
         multipart:
             max-file-size: 10MB
